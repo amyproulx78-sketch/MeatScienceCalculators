@@ -23,3 +23,6 @@ This webpage has been prepared by Dr. Amy Proulx, Professor and Academic Program
 ### Fermented and dried meats
 - [Staphylococcus Degree-Hours Calculator](staphylococcusdegreehourscalculator.html)
 - [Fermented and Dried Meat Control Finder](fermenteddrieddecisiontree.html)
+
+### Niagara College Student HACCP Certificate Database
+- [HACCP Certificate Database](certificate-lookup.html)
