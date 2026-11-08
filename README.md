@@ -1,4 +1,4 @@
-<p align="center">
+<p align="left">
   <img src="NClogo.png" alt="Niagara College logo" width="150">
 </p>
 
@@ -29,4 +29,4 @@ These calculators are being validated for use in industry, however please perfor
 ### Niagara College Student HACCP Certificate Database
 - [HACCP Certificate Database](certificate-lookup.html)
 
-This webpage has been prepared by Dr. Amy Proulx, Professor and Academic Program Coordinator of Food Innovation Programs at Niagara College Canada. Last updated November 8, 2026.
+These calculators have been prepared by Dr. Amy Proulx, Professor and Academic Program Coordinator of Food Innovation Programs at Niagara College Canada. Last updated November 8, 2026.
