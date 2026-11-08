@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trichinella Control Finder: Pork Products</title>
+<style>
+:root{
+  --bg:#ffffff; --fg:#1b1f23; --muted:#5b6670; --card:#f5f7f9; --line:#d3d9df;
+  --accent:#1c5d99; --accent-fg:#ffffff; --pass:#1b6e3a; --pass-bg:#e6f4ea; --fail:#a4262c; --fail-bg:#fbe9ea;
+  --warn:#7a5200; --warn-bg:#fff4d6; --info-bg:#e8f1fa;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181c; --fg:#e8ecef; --muted:#9aa6b0; --card:#1d2329; --line:#35404a;
+    --accent:#6fb0ea; --accent-fg:#0b1218; --pass:#7fd49a; --pass-bg:#16301f; --fail:#ff9a9f; --fail-bg:#3a1a1c;
+    --warn:#f2cb72; --warn-bg:#3a2f12; --info-bg:#1a2733;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:800px;margin:0 auto;padding:14px}
+h1{font-size:1.45rem;margin:.2rem 0 .3rem}
+h2{font-size:1.2rem;margin:0 0 .6rem}
+h3{font-size:1.02rem;margin:1.1rem 0 .3rem}
+p{margin:.4rem 0}
+a{color:var(--accent)}
+.sub{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin:14px 0}
+.qnum{font-size:.85rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.help{background:var(--info-bg);border-left:4px solid var(--accent);border-radius:6px;padding:8px 12px;margin:10px 0;font-size:.93rem}
+.opts{display:grid;gap:10px;margin-top:14px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);padding:10px 18px;font-weight:600}
+button.secondary{background:transparent;color:var(--accent)}
+button.small{padding:5px 12px;font-size:.88rem}
+button.opt{background:var(--bg);color:var(--fg);border:2px solid var(--line);text-align:left;padding:12px 14px;font-weight:600;width:100%}
+button.opt:hover,button.opt:focus-visible{border-color:var(--accent)}
+button.opt .d{display:block;font-weight:400;font-size:.88rem;color:var(--muted);margin-top:2px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.trail{font-size:.88rem;margin:0;padding-left:18px;color:var(--muted)}
+.trail li{margin:2px 0}
+.trail b{color:var(--fg)}
+.banner{border-radius:10px;padding:14px 16px;border:2px solid;margin:12px 0}
+.banner.go{background:var(--pass-bg);border-color:var(--pass)}
+.banner.out{background:var(--warn-bg);border-color:var(--warn)}
+.banner.cmp{background:var(--info-bg);border-color:var(--accent)}
+.banner .big{font-size:1.2rem;font-weight:700}
+.banner.go .big{color:var(--pass)} .banner.out .big{color:var(--warn)} .banner.cmp .big{color:var(--accent)}
+.note{border-radius:8px;padding:8px 12px;margin:10px 0;font-size:.92rem;border:1px solid}
+.note.warn{background:var(--warn-bg);border-color:var(--warn)}
+.note.info{background:var(--info-bg);border-color:var(--accent)}
+.note.bad{background:var(--fail-bg);border-color:var(--fail)}
+ul.req{padding-left:20px;margin:.3rem 0}
+ul.req li{margin:5px 0}
+.pill{display:inline-block;font-size:.8rem;font-weight:700;border-radius:20px;padding:1px 10px;border:1.5px solid var(--accent);color:var(--accent);margin-right:6px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td.r,th.r{text-align:right}
+.tablewrap{overflow-x:auto;margin:6px 0}
+details{margin-top:12px} summary{cursor:pointer;font-weight:600}
+dl{margin:.4rem 0} dt{font-weight:700;margin-top:.5rem} dd{margin:0}
+.small{font-size:.85rem;color:var(--muted)}
+ol.outline,ol.outline ol{padding-left:20px;margin:.2rem 0} ol.outline li{margin:3px 0;font-size:.9rem}
+.hidden{display:none!important}
+/* calculators */
+.tool{border:2px dashed var(--accent);border-radius:10px;padding:12px 14px;margin:16px 0;background:var(--bg)}
+.tool h3{margin-top:0}
+.tool label{display:block;font-weight:600;font-size:.9rem;margin:8px 0 3px}
+.tool input[type=number],.tool select,.tool textarea{width:100%;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:7px}
+.tool textarea{min-height:70px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88rem}
+.tgrid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.toolout{margin-top:10px}
+.toolout .res{background:var(--pass-bg);border:1px solid var(--pass);border-radius:8px;padding:8px 12px;margin:6px 0}
+.toolout .no{background:var(--fail-bg);border:1px solid var(--fail);border-radius:8px;padding:8px 12px;margin:6px 0}
+.toolout .wn{background:var(--warn-bg);border:1px solid var(--warn);border-radius:8px;padding:8px 12px;margin:6px 0}
+.toolout .big{font-size:1.25rem;font-weight:800}
+.ing td,.ing th{padding:3px 4px}
+.ing input[type=number],.ing input[type=text]{width:100%;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px}
+@media print{ .noprint{display:none!important} body{font-size:12pt} .card{border:1px solid #999} .tool{display:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Trichinella Control Finder</h1>
+<p class="sub">Pork products. Answer a few plain-language questions to find the CFIA control method that fits your product and process, then check your own numbers against it.</p>
+
+<main id="app" aria-live="polite"></main>
+
+<section class="card noprint" aria-labelledby="gl">
+  <h2 id="gl">Plain-language glossary</h2>
+  <dl>
+    <dt><em>Trichinella</em></dt><dd>A parasite whose larvae can live in pork muscle. Curing, heating and freezing can destroy the larvae.</dd>
+    <dt>Striated pork muscle</dt><dd>Ordinary skeletal muscle, the "meat" in pork. The CFIA methods are written for products that contain it.</dd>
+    <dt>Curing</dt><dd>Treating meat with salt (and other curing materials) for a set time and temperature, often followed by drying or smoking.</dd>
+    <dt>Drying room</dt><dd>A room held at a minimum temperature where cured product loses moisture over days or weeks.</dd>
+    <dt>Overhaul</dt><dd>Turning cured pieces over and applying more cure to cover the lean meat.</dd>
+    <dt>Cure equalization</dt><dd>A rest period after curing that lets the salt spread deeper into the meat.</dd>
+    <dt>Salimeter</dt><dd>A scale that shows how strong a salt pickle (brine) is.</dd>
+    <dt>Thermocouple</dt><dd>A temperature probe placed in the product (or freezer) and connected to a recording thermometer.</dd>
+    <dt>Lot</dt><dd>The group of product treated and recorded together.</dd>
+    <dt>Uninterrupted</dt><dd>The time count restarts if the freezer temperature rises above the required temperature.</dd>
+  </dl>
+</section>
+
+<section class="card noprint">
+  <h2>About this tool</h2>
+  <p class="small">This tool follows the CFIA page <a href="https://inspection.canada.ca/en/making-trading-food/food-safety-industry/preventive-control-plans/controls-food/meat/trichinella-spiralis" target="_blank" rel="noopener">Control recommendations for the inactivation of <em>Trichinella spiralis</em> in pork products</a> (page last modified 2022-10-07). Check the page for the latest wording, since it may change.</p>
+  <p class="small">It is a learning and planning aid, not a regulatory decision or a validation. Where a rule on the page is unclear or looks inconsistent, the tool says so and suggests confirming with CFIA.</p>
+</section>
+
+</div>
+
+<script>
+// ===== CORE START =====
+const URL_PAGE='https://inspection.canada.ca/en/making-trading-food/food-safety-industry/preventive-control-plans/controls-food/meat/trichinella-spiralis';
+const EPS=1e-9;
+
+// ---- Heating (Table B): [min internal °C, °F, label, minutes, monitoring-exemption note applies] ----
+const HEAT=[
+ [49.0,120,'21 hours',1260,false],[50.0,122,'9.5 hours',570,false],[51.1,124,'4.5 hours',270,false],[52.2,126,'2.0 hours',120,false],
+ [53.4,128,'1.0 hour',60,false],[54.5,130,'30 minutes',30,false],[55.6,132,'15 minutes',15,false],[56.7,134,'6 minutes',6,false],
+ [57.8,136,'3 minutes',3,false],[58.9,138,'2 minutes',2,false],[60.0,140,'1 minute',1,true],[61.1,142,'1 minute',1,true],[62.2,144,'Instant',0,true]];
+function heatLookup(T){ let row=null; for(const r of HEAT){ if(T>=r[0]-EPS) row=r; } return row; } // highest tabulated temperature at or below T
+
+// ---- Freezing ----
+const F3=[[-17.8,106],[-20.6,82],[-23.3,63],[-26.1,48],[-28.9,35],[-31.7,22],[-34.5,8],[-37.2,0.5]]; // Table C.1.3 [°C, hours]
+const F2=[[-15.0,20,30],[-23.3,10,20],[-28.9,6,12]];                                                 // Table C.1.2 [°C, G1 days, G2 days]
+function f3Lookup(T){ let best=null; for(const r of F3){ if(T<=r[0]+EPS && (best===null||r[0]<best[0])) best=r; } return best; } // coldest tabulated row the product has reached
+function f2Lookup(T,th){
+  const g = th<=15?1 : th<=50?2 : null; if(g===null) return null;
+  let best=null; for(const r of F2){ if(T<=r[0]+EPS && (best===null||r[0]<best[0])) best=r; }
+  return best ? {temp:best[0], days: g===1?best[1]:best[2], group:g} : null;
+}
+function f1Lookup(T,th){
+  if(T>-25+EPS) return null; if(th<=25) return {days:10,group:1}; if(th<=50) return {days:20,group:2}; return null;
+}
+
+// ---- Sausage by casing diameter (cm at stuffing) ----
+function sdiaLookup(method,d){
+  const L=[];
+  if(method===1){
+    if(d<=3.5) L.push('Hold in the drying room at 7.3 °C or higher for at least <b>15 days</b>.','Do not release from the drying room sooner than <b>20 days</b> after the curing materials were added.');
+    else if(d<=8.8) L.push('Hold in the drying room at 7.3 °C or higher for at least <b>20 days</b>.','Do not release from the drying room sooner than <b>25 days</b> after the curing materials were added.');
+    else if(d<=10.2) L.push('Hold in the drying room at 7.3 °C or higher for at least <b>35 days</b>.','Do not release from the drying room sooner than <b>40 days</b> after the curing materials were added.');
+    else return {ok:false,msg:'Method 1 covers casings up to 10.2 cm (4 inches) at stuffing.'};
+  } else if(method===2){
+    L.push('Smoke for at least <b>40 hours</b> at 26.7 °C or higher.');
+    if(d<=8.8) L.push('Then dry at 7.3 °C or higher for at least <b>10 days</b>.','Do not release from the drying room sooner than <b>18 days</b> after the curing materials were added.');
+    else if(d<=10.2) L.push('Then dry at 7.3 °C or higher for at least <b>25 days</b>.','Do not release from the drying room sooner than <b>33 days</b> after the curing materials were added.');
+    else return {ok:false,msg:'Method 2 covers casings up to 10.2 cm (4 inches) at stuffing.'};
+  } else if(method===3){
+    if(d<=8.8) L.push('Smoke for at least <b>12 hours</b> after curing, at 32.3 °C or higher.','Raise the temperature gradually (over at least 4 hours) and hold <b>at least 4 consecutive hours at 53.4 °C or higher</b>.');
+    else if(d<=10.2) L.push('Smoke for at least <b>15 hours</b> after curing, above 32.3 °C.','Raise the temperature gradually (over at least 4 hours) and hold <b>at least 7 consecutive hours at 53.4 °C or higher</b>.');
+    else return {ok:false,msg:'Method 3 covers casings up to 10.2 cm (4 inches) at stuffing.'};
+  } else if(method===7){
+    if(d<=5.5) L.push('Either schedule works: the <b>19-hour</b> schedule then drying at 10 °C or higher for at least <b>4 days</b>, or the <b>23-hour</b> schedule then drying at 10 °C or higher for at least <b>7 days</b>.');
+    else if(d<=10.5) L.push('Use the <b>23-hour</b> schedule, then dry at 10 °C or higher for at least <b>7 days</b>.');
+    else return {ok:false,msg:'Method 7 covers casings up to 10.5 cm (4⅛ inches) at stuffing.'};
+  }
+  return {ok:true,lines:L};
+}
+
+// ---- Sausage Method 6 ----
+const M6_BASE=[[2.5,14],[3.8,15],[5.0,16],[6.3,18],[7.6,20],[8.8,23],[10.1,25],[11.4,30],[12.7,35],[13.4,43],[15.2,50]];
+const M6_TEMPS=[21.1,23.9,26.7,29.5,32.2,35.0,37.9,40.6,43.3,48.9];
+const M6_HOURS=[24,48,72,96,120];
+const M6_RED=[[4,5,8,10,15,23,37,57,90,100],[9,12,18,25,35,49,88,100,100,100],[14,19,28,39,55,74,100,100,100,100],[19,26,38,53,75,98,100,100,100,100],[24,33,48,67,95,100,100,100,100,100]];
+const M6_SALT={3.3:1,3.2:4,3.1:7,3.0:10,2.9:13,2.8:16,2.7:19,2.6:22,2.5:25,2.4:28,2.3:31,2.2:34,2.1:37,2.0:40};
+function saltConc(salt,total,dry){
+  const base=total-dry; if(!(base>0)) return null;
+  const raw=salt/base*100; return {raw, rounded: Math.floor(raw*10+1e-9)/10};
+}
+function m6Reduction(hours,temp){
+  if(!(hours>=24) || !(temp>=21.1-EPS)) return {pct:0,hRow:null,tCol:null};
+  let ti=0; M6_TEMPS.forEach((t,i)=>{ if(temp>=t-EPS) ti=i; });
+  let hi=0; M6_HOURS.forEach((h,i)=>{ if(hours>=h-EPS) hi=i; });
+  return {pct:M6_RED[hi][ti], hRow:M6_HOURS[hi], tCol:M6_TEMPS[ti]};
+}
+function m6Days(baseline,redPct,saltRounded){
+  const reduceDays=Math.floor(baseline*redPct/100+EPS);
+  let incPct=0, notPermitted=false;
+  if(saltRounded<2.0-EPS) notPermitted=true;
+  else if(saltRounded<3.4-EPS){ const key=(Math.round(saltRounded*10)/10).toFixed(1); incPct=M6_SALT[parseFloat(key)]; }
+  const addDays=Math.ceil(baseline*incPct/100-EPS);
+  return {reduceDays,incPct,addDays,notPermitted, min:baseline-reduceDays+addDays};
+}
+
+// ---- Hams and shoulders ----
+const up=x=>Math.ceil(x-EPS);
+function hamCalc(method,W){
+  if(method==='h2a') return {contact:Math.max(28,up(3.3*W)), contactRule:'at least 28 days and at least 3.3 days per kg, whichever is longer', total:Math.max(40,up(4.4*W)), totalRule:'at least 40 days and at least 4.4 days per kg, whichever is longer'};
+  if(method==='h2b') return {total:Math.max(40,up(4.4*W)), totalRule:'at least 40 days and at least 4.4 days per kg, whichever is longer'};
+  if(method==='h3') return {contact:Math.max(30,up(4.4*W)), contactRule:'at least 30 days and at least 4.4 days per kg, whichever is longer', equal:Math.max(14,up(2.2*W)), equalRule:'at least 14 days and at least 2.2 days per kg, whichever is longer'};
+  return {};
+}
+const HAMDRY=[[54.4,1.5,0.67],[51.7,2,0.50],[48.9,3,0.33],[46.1,4,0.25],[43.3,5,0.20],[40.6,6,0.17],[37.8,7,0.14],[35.0,9,0.11],[32.2,11,0.091],[29.4,18,0.056],[26.7,25,0.040],[23.9,35,0.029]];
+function hamDryRow(T){ for(const r of HAMDRY){ if(T>=r[0]-EPS) return r; } return null; }
+function hamDrySum(temps){ let s=0; temps.forEach(T=>{ const r=hamDryRow(T); if(r) s+=r[2]; }); return s; }
+// ===== CORE END =====
+
+// ===== TREE DATA =====
+const ul=a=>'<ul class="req">'+a.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+const CURING_NOTE='The curing methods are designed to destroy <em>Trichinella</em>. They do not guarantee the product is safe from other pathogens, such as <em>Salmonella</em>, <em>Toxoplasma gondii</em>, <em>E. coli</em> or <em>L. monocytogenes</em>.';
+const GO_HEAT={label:'Look at heating instead',go:'r:heat'}, GO_FREEZE={label:'Look at freezing instead',go:'q_freeze'};
+
+const Q={
+ q_pork:{title:'Does the product contain pork muscle?',
+  help:'The CFIA page covers sausages and meat products that contain striated pork muscle tissue. That is ordinary skeletal muscle, the "meat" in pork.',
+  options:[
+   {label:'Yes, it contains pork muscle', next:'q_approach'},
+   {label:'It contains pork, but only fat, skin or organ meats (no muscle)', result:'out_nomuscle'},
+   {label:'No, it contains no pork', result:'out_nopork'}]},
+ q_approach:{title:'Which way will you destroy Trichinella?',
+  help:'CFIA describes three approaches: curing, heating and freezing. Any one of them can be used for a product it covers.',
+  options:[
+   {label:'Curing', detail:'Salt cure with time, temperature, drying or smoking.', next:'q_cure'},
+   {label:'Heating', detail:'Cooking to a minimum internal temperature for a minimum time.', result:'heat'},
+   {label:'Freezing', detail:'Holding product frozen at a set temperature for a set time.', next:'q_freeze'},
+   {label:'I am not sure, help me choose', next:'q_help'}]},
+ q_help:{title:'What best describes the product?',
+  options:[
+   {label:'A fully cooked or heat-processed product', result:'heat'},
+   {label:'A raw product that is not cooked or cured', next:'q_freeze'},
+   {label:'A dry-cured, dried or smoked product', next:'q_cure'},
+   {label:'Show me the three approaches side by side', result:'cmp_approach'}]},
+
+ q_cure:{title:'What are you making?',
+  options:[
+   {label:'Sausage', detail:'Ground or chopped pork, cured, usually stuffed in casings.', next:'q_s_particle'},
+   {label:'Capicola, capocollo, capacola or coppa', detail:'Dry-cured boneless pork shoulder butt.', next:'q_capi'},
+   {label:'Ham or pork shoulder picnic', next:'q_ham'},
+   {label:'Boneless pork loin or loin end', result:'loin'},
+   {label:'Another cured pork product', result:'out_othercure'}]},
+
+ // ---- sausage ----
+ q_s_particle:{title:'What is the largest size of the meat pieces after grinding or chopping?',
+  options:[
+   {label:'0.6 cm (¼ inch) or smaller', next:'q_s_fine'},
+   {label:'Up to 1.9 cm (¾ inch)', next:'q_s_coarse'},
+   {label:'Larger than 1.9 cm', result:'out_particle'}]},
+ q_s_fine:{title:'Which process do you use?',
+  help:'A fine grind also satisfies the coarser limits, so the other methods remain open to you if neither of these fits.',
+  options:[
+   {label:'Staged heat treatment in a heated room after stuffing, then drying', detail:'Needs at least 2.7% salt (by weight of the sausage meat).', result:'m7'},
+   {label:'Held 10 days as a compact mass after mixing, then stuffed and dried', detail:'Needs at least 2.5% salt.', result:'m4'},
+   {label:'Neither, check the other methods', next:'q_s_coarse'}]},
+ q_s_coarse:{title:'How much salt is in the sausage, by weight of the unstuffed sausage material?',
+  options:[
+   {label:'3.33% or more', next:'q_s_proc'},
+   {label:'2.0% to less than 3.33%', detail:'Only Method 6 allows reduced salt, with longer drying.', result:'m6'},
+   {label:'Less than 2.0%', result:'out_salt'}]},
+ q_s_proc:{title:'What happens after the meat and salt are mixed?',
+  options:[
+   {label:'Stuffed and dried, no smoking required', result:'m1'},
+   {label:'Stuffed, smoked for at least 40 hours, then dried', result:'m2'},
+   {label:'Cured about 6 days, then smoked on a heated schedule, no drying room', result:'m3'},
+   {label:'Stuffed in coated casings (for example paraffin) and dried 65 days', result:'m5'},
+   {label:'A flexible program: 48-hour holding period, optional smoking or fermenting, then drying for a calculated number of days', result:'m6'}]},
+
+ q_capi:{title:'Is the product smoked?',
+  options:[
+   {label:'Yes, smoked (capicola, capocollo, capacola)', result:'capicola'},
+   {label:'No, unsmoked (coppa)', result:'coppa'}]},
+
+ // ---- ham ----
+ q_ham:{title:'How are the hams or shoulder picnics cured?',
+  options:[
+   {label:'Laid down in salt, at least 4 kg of salt per 100 kg of meat', detail:'Method 1.', result:'h1'},
+   {label:'Cure mixture with at least 70% salt rubbed on all exposed muscle', detail:'Method 2, traditional dry curing.', result:'h2a'},
+   {label:'Wrapped with the cure mixture in kraft paper bags', detail:'Method 2, bag curing.', result:'h2b'},
+   {label:'Cure mixture with at least 71.5% salt, applied 3 or 4 times in the first 14 days', detail:'Method 3. Potassium chloride may replace up to half the salt.', result:'h3'},
+   {label:'I am not sure, compare the methods', result:'cmp_ham'}]},
+
+ // ---- freezing ----
+ q_freeze:{title:'How will the freezing be carried out and monitored?',
+  help:'Freezing methods differ in what you monitor (freezer room or product temperature), and whether spacers or shrink wrap are allowed.',
+  options:[
+   {label:'Chilled product (4 °C or less) goes into my freezer, controlled by freezer temperature', detail:'Methods 1 and 2.', result:'fr12'},
+   {label:'Product arrives already frozen, and I monitor its internal temperature with a thermocouple', detail:'Method 3.', result:'fr3'},
+   {label:'Chilled product, monitored with a thermocouple until it reaches freezer temperature, then by freezer temperature', detail:'Method 4.', result:'fr4'},
+   {label:'Large cuts in bulk containers, such as bone-in hams', detail:'Method 5.', result:'fr5'},
+   {label:'I am not sure, compare the methods', result:'cmp_freeze'}]}
+};
+const START='q_pork';
+
+// ---- result definitions ----
+const R={
+ out_nopork:{type:'out',title:'Not covered by this page',why:'This CFIA page is about destroying Trichinella in pork products, so it does not set out controls for a product with no pork.'},
+ out_nomuscle:{type:'out',title:'Not clearly covered by this page',why:'The methods on the page are written for sausages and meat products containing striated pork muscle tissue. They do not address products made only from fat, skin or organ meats. Ask CFIA how the requirements apply to your product.'},
+ out_othercure:{type:'out',title:'No curing method is listed for this product',why:'The page gives curing methods only for sausages, capicola and coppa, hams and shoulder picnics, and boneless loins. For another cured pork product, you could use heating or freezing, or ask CFIA.',actions:[GO_HEAT,GO_FREEZE]},
+ out_particle:{type:'out',title:'The sausage methods do not allow pieces this large',why:'Every sausage method on the page needs meat ground or chopped to 1.9 cm (¾ inch) or smaller. Grind more finely, or look at heating or freezing instead.',actions:[GO_HEAT,GO_FREEZE]},
+ out_salt:{type:'out',title:'Too little salt for any sausage method',why:'The most reduced-salt option (Method 6) goes down to 2.0% salt, calculated excluding dry ingredients. Below that, no curing method on the page applies. Raise the salt level, or look at heating or freezing instead.',actions:[GO_HEAT,GO_FREEZE]},
+
+ // ---------- sausages ----------
+ m1:{type:'opt',curing:true,title:'Sausage Method 1: cured and dried',
+  idea:'Cure the sausage with salt and dry it in a drying room. No smoking is required.',
+  needs:['Grind or chop the meat into pieces no larger than <b>1.9 cm (¾ inch)</b>.','Mix in at least <b>3.33% salt</b> by weight of the unstuffed sausage material, mixed thoroughly with the meat.','Dry in a drying room at <b>7.3 °C or higher</b> for a time that depends on the casing diameter at stuffing (see the calculator below).','The release date counts from the day the curing materials were added to the meat.'],
+  table:{head:['Casing diameter at stuffing','Minimum days in drying room (≥7.3 °C)','Earliest release (days after curing materials added)'],rows:[['3.5 cm (1⅜ in) or less','15','20'],['Up to 8.8 cm (3½ in)','20','25'],['Over 8.8 up to 10.2 cm (4 in)','35','40']]},
+  tools:[['sdia',1]]},
+ m2:{type:'opt',curing:true,title:'Sausage Method 2: cured, smoked and dried',
+  idea:'Cure with salt, smoke for at least 40 hours, then dry.',
+  needs:['Grind or chop the meat into pieces no larger than <b>1.9 cm (¾ inch)</b>.','Mix in a dry-curing mixture giving at least <b>3.33% salt</b> by weight of the unstuffed sausage material.','After stuffing, smoke for at least <b>40 hours</b> at <b>26.7 °C or higher</b>.','After smoking, dry at 7.3 °C or higher, for the days that match the casing diameter (see the calculator below).'],
+  table:{head:['Casing diameter at stuffing','Minimum days drying after smoking (≥7.3 °C)','Earliest release (days after curing materials added)'],rows:[['Up to 8.8 cm (3½ in)','10','18'],['Over 8.8 up to 10.2 cm (4 in)','25','33']]},
+  tools:[['sdia',2]]},
+ m3:{type:'opt',curing:true,title:'Sausage Method 3: cured and smoked',
+  idea:'A 6-day cure followed by mandatory smoking on a heated schedule. There is no drying-room period.',
+  needs:['Grind or chop the meat into pieces no larger than <b>1.9 cm (¾ inch)</b>.','Mix in a dry-curing mixture giving at least <b>3.33% salt</b> by weight of the unstuffed sausage material.','<b>Total curing time of at least 6 days</b>, which includes a holding period of at least <b>36 hours</b> before stuffing (counted from when the salt and curing material were added) with the mixture held at <b>1.2 °C or higher</b>.','After stuffing, keep curing until the 6 days are reached. During this time the sausages are held at <b>1.5 °C or higher</b>, <b>or</b> placed in a pickle of at least 50° salimeter at 6.7 °C or higher.','<b>Smoking is mandatory.</b> The smoking schedule depends on the casing diameter (see the calculator below).'],
+  tools:[['sdia',3]]},
+ m4:{type:'opt',curing:true,title:'Sausage Method 4: cured and dried, with optional cooking or smoking',
+  idea:'A very fine grind, a 10-day hold as a compact mass before stuffing, then drying to a 35-day total.',
+  needs:['Grind or chop the meat into pieces no larger than <b>0.6 cm (¼ inch)</b>.','Mix in a dry-curing mixture giving at least <b>2.5% salt</b> by weight of the unstuffed sausage material.','Before stuffing, hold the mixed meat as a compact mass no deeper than <b>15.2 cm (6 inches)</b> at <b>2.3 °C or higher</b> for at least <b>10 days</b>.','Then stuff into casings or cloth bags no larger than <b>8.5 cm (3⅓ inches)</b> in diameter at stuffing.','Optional, at any time after stuffing: heat in a water bath for no more than 3 hours at 29.5 °C or higher, and/or smoke for no more than 3 hours at 26.7 °C or higher.','Hold in a drying room at <b>7.3 °C or higher</b> for the rest of a <b>35-day period</b> counted from when the curing materials were added. Time spent heating or smoking is not counted, so the drying time is extended by that amount.']},
+ m5:{type:'opt',curing:true,title:'Sausage Method 5: coated casings or coverings',
+  idea:'For sausages with coated casings, with a long 65-day drying period.',
+  needs:['Grind or chop the meat into pieces no larger than <b>1.9 cm (¾ inch)</b>.','Mix in a dry-curing mixture giving at least <b>3.33% salt</b> by weight of the unstuffed sausage material.','After stuffing, hold in a drying room at <b>7.3 °C or higher</b> for at least <b>65 days</b>.','The casings or coverings may be coated with paraffin or another suitable substance, before or during drying.']},
+ m6:{type:'opt',curing:true,title:'Sausage Method 6: dry cured, with optional smoking and reduced salt',
+  idea:'A flexible method. The drying days are worked out from the casing size, with credit for smoking or fermenting, and extra days if the salt is reduced.',
+  needs:['Grind or chop the meat into pieces no larger than <b>1.9 cm (¾ inch)</b>.','Salt of at least <b>3.33%</b> by weight of the unstuffed sausage material, <b>excluding the weight of dry ingredients</b>. Lower salt (down to <b>2.0%</b>) is allowed if the drying time is increased.','Salt concentration = [weight of salt ÷ (weight of sausage formula − weight of dry ingredients)] × 100, <b>rounded down to the next lowest 0.1%</b>. Dry ingredients include the salt itself, sugars and spices.','A <b>holding period of at least 48 hours</b> in a room at <b>1.7 °C or higher</b>.','A <b>drying period</b> in a room at <b>10.0 °C or higher</b> for at least the number of days worked out as: baseline days − days credited for smoking or fermenting + days added for reduced salt.','The holding period may be done before or partly during drying. If it is not finished before drying starts, finish it after drying or as an extension of the drying period.','Interpolation of the smoking and fermenting table values is not acceptable. Use the next lowest time and temperature.'],
+  notes:['The page lists the 5.5 inch row as <b>13.4 cm</b>, but 5.5 inches is about 14.0 cm. Check with CFIA if your casing is near that size.','For flattened or oval sausages, work out the diameter from the circumference divided by 3.14.','Internal product temperature is used for the smoking or fermenting credit, except for dry-cured fermented sausages (pH of 5.3 or lower at the end of fermentation and water activity of 0.90 or less at the end of drying), where room or product temperature may be used.'],
+  tools:[['m6']]},
+ m7:{type:'opt',curing:true,title:'Sausage Method 7: dry sausages with a heat-treatment schedule',
+  idea:'A very fine grind, then a staged heating schedule of 23 hours (or 19 hours for small sausages), then drying.',
+  needs:['Grind or chop the meat into pieces no larger than <b>0.6 cm (¼ inch)</b>.','Mix in at least <b>2.7% salt by weight of the sausage meat</b> (the meat only, not the whole formula), uniformly mixed.','After stuffing, run the heating schedule that matches the casing size (see the tables), using the minimum room temperatures and times shown.','Then dry at <b>10 °C or higher</b> for at least <b>7 days</b> (23-hour schedule) or <b>4 days</b> (19-hour schedule).'],
+  table:{head:['23-hour schedule (casing up to 10.5 cm, 4⅛ in)','Minimum room temperature','Minimum time'],rows:[['Step 1','10.0 °C','12 hours'],['Step 2','32.2 °C','1 hour'],['Step 3','37.8 °C','1 hour'],['Step 4','43.3 °C','1 hour'],['Step 5','48.9 °C','1 hour'],['Step 6','51.7 °C','7 hours']]},
+  table2:{head:['19-hour schedule (casing up to 5.5 cm, 2⅛ in)','Minimum room temperature','Minimum time'],rows:[['Step 1','10.0 °C','12 hours'],['Step 2','37.8 °C','1 hour'],['Step 3','51.7 °C','6 hours']]},
+  tools:[['sdia',7]]},
+
+ capicola:{type:'opt',curing:true,title:'Capicola, capocollo and capacola (smoked)',
+  idea:'Dry-cured, smoked boneless pork shoulder butt.',
+  needs:['Dry-cure with a mixture containing at least <b>4.5 kg of salt per 100 kg of fresh meat</b> (weighed before curing).','Cure for at least <b>25 days</b> at <b>2.3 °C or higher</b>.','Smoke for at least <b>30 hours</b> at <b>26.7 °C or higher</b>.','Dry for at least <b>20 days</b> at <b>7.3 °C or higher</b>.','If the cure is applied by "churning", a small amount of pickle may be added. Butts may be overhauled (turned over and given more pickle or dry salt) during curing.','Do not treat the butts to remove salt, during or after curing, other than a superficial wash.'],
+  tools:[['amount',[['Minimum salt for the cure',4.5,'kg']]]]},
+ coppa:{type:'opt',curing:true,title:'Coppa (unsmoked)',
+  idea:'Dry-cured, unsmoked boneless pork shoulder butt.',
+  needs:['Dry-cure with a mixture containing at least <b>4.5 kg of salt per 100 kg of fresh meat</b> (weighed before curing).','Cure for at least <b>18 days</b> at <b>2.3 °C or higher</b>.','No smoking is required.','Dry for at least <b>35 days</b> at <b>7.3 °C or higher</b>.','If the cure is applied by "churning", a small amount of pickle may be added. Butts may be overhauled during curing.','Do not treat the butts to remove salt, during or after curing, other than a superficial wash.'],
+  tools:[['amount',[['Minimum salt for the cure',4.5,'kg']]]]},
+
+ // ---------- hams ----------
+ h1:{type:'opt',curing:true,title:'Hams and shoulder picnics, Method 1: laid down in salt',
+  idea:'Pack the product in salt for at least 40 days, then dry or smoke it.',
+  needs:['Lay the hams or picnics down in salt at a ratio of at least <b>4.0 kg of salt per 100 kg of fresh meat</b> (before curing), for at least <b>40 days</b> in a room at <b>2.3 °C or higher</b>.','Apply the salt thoroughly to the lean meat of each item. The product may be pumped with pickle when it is placed in cure.','At least once during curing, <b>overhaul</b> the product (turn it over for more cure) and add more salt if needed to cover the lean meat.','At the end, the product may be soaked for up to <b>15 hours</b> in water at no more than <b>21 °C</b>. The water may be changed only once. No other treatment to remove salt is allowed, except superficial washing.','Finally, dry or smoke the product using a time and temperature from the drying table (see the drying calculator below).'],
+  tools:[['ham','h1'],['hamdry']]},
+ h2a:{type:'opt',curing:true,title:'Hams and shoulder picnics, Method 2: traditional dry curing',
+  idea:'Rub on a cure mixture of at least 70% salt and cure for a time set by the weight of the heaviest piece.',
+  needs:['Cover all exposed muscle tissue and pack the hock with a cure mixture containing at least <b>70% salt</b> by weight of the mixture.','<b>Cure contact time:</b> at least 28 days and at least 3.3 days per kg of uncured product, whichever is longer, at a room temperature of <b>1.7 to 7.3 °C</b>.','Optional <b>cure equalization time</b> at 1.7 to 15.6 °C so the cure can soak deeper.','Days per kg are multiplied by the weight of the <b>heaviest piece</b> in the lot, weighed before the cure is added.','<b>Total curing time</b> (from applying the cure to entering the drying room): at least 40 days and at least 4.4 days per kg of uncured product, whichever is longer.','Keep exposed muscle coated with the cure mixture. At the end you may remove excess cure mechanically or with a water rinse of <b>60 seconds or less</b>. <b>Soaking is not permitted.</b>','Dry using a time and temperature from the drying table (see the drying calculator below).'],
+  tools:[['ham','h2a'],['hamdry']]},
+ h2b:{type:'opt',curing:true,title:'Hams and shoulder picnics, Method 2: bag curing',
+  idea:'Wrap each ham in kraft paper with the cure mixture, so the cure stays in contact with the meat.',
+  needs:['Wrap the ham and cure mixture together in <b>uncoated kraft paper</b> and hang each piece individually. No reapplication of salt is needed.','Rub the exposed muscle and pack the hock with cure mixture containing at least <b>6 kg of salt per 100 kg of uncured meat</b> (weighed before adding the cure). Use any remaining cure mixture in the paper wrap.','Keep the product wrapped for a curing period of at least 40 days and at least 4.4 days per kg of uncured ham or shoulder, whichever is longest, at <b>1.7 to 7.3 °C</b>. It may be unwrapped during drying.','Days per kg are multiplied by the weight of the <b>heaviest piece</b> in the lot, weighed before the cure is added.','Dry using a time and temperature from the drying table (see the drying calculator below).'],
+  tools:[['ham','h2b'],['hamdry']]},
+ h3:{type:'opt',curing:true,title:'Hams and shoulder picnics, Method 3: cure with at least 71.5% salt',
+  idea:'Apply a measured amount of cure in 3 or 4 applications, then allow a cure contact period and an equalization period before drying.',
+  needs:['Use a cure mixture with at least <b>71.5% salt</b> by weight. Potassium chloride (KCl) may replace up to <b>half</b> of the required salt on an equal-weight basis.','Apply at least <b>5.72 kg of cure per 100 kg of fresh meat</b> (weighed before adding the cure). Pack the hock and cover all exposed muscle.','Apply the cure in <b>3 or 4 roughly equal amounts</b> (3 or 4 overhauls) at separate times during the <b>first 14 days</b> of curing.','Keep the product in contact with the cure at <b>1.7 °C or higher</b> for at least 4.4 days per kg of uncured product and at least 30 days, whichever is longest.','Then remove excess cure by rinsing for no more than 60 seconds or mechanically. <b>Soaking is not allowed.</b>','Then allow an <b>equalization period</b> of at least 2.2 days per kg and at least 14 days, whichever is longest. Extra cure contact days may replace equal numbers of equalization days.','<b>Drying cannot begin until equalization ends.</b> Dry using a time and temperature from the drying table (see the drying calculator below).'],
+  tools:[['ham','h3'],['hamdry']]},
+
+ loin:{type:'opt',curing:true,title:'Boneless pork loins and loin ends',
+  idea:'Cure for at least 25 days, then smoke for at least 12 hours and dry for at least 12 days.',
+  needs:['Cure for at least <b>25 days</b> at <b>2.3 °C or higher</b>, using <b>one</b> of these:',
+   '&nbsp;&nbsp;(a) a dry-salt curing mixture with at least <b>5 kg of salt per 100 kg of fresh meat</b> (weighed before curing),',
+   '&nbsp;&nbsp;(b) a pickle of at least <b>80° salimeter</b> at <b>60 kg of pickle per 100 kg of fresh meat</b>, or',
+   '&nbsp;&nbsp;(c) a pickle of at least 80° strength added to the dry-salt cure in (a).',
+   'Loins may be soaked in water at no more than <b>21 °C</b> for no more than <b>1 hour</b>, or washed under a spray. No other treatment to remove salt is allowed, during or after curing.',
+   'Smoke for at least <b>12 hours</b>. The smokehouse stays above <b>37.8 °C</b> the whole time, and within the 12 hours it is held at <b>51.7 °C or higher for at least 4 consecutive hours</b>.',
+   'Then hold in a drying room at <b>7.3 °C or higher</b> for at least <b>12 days</b>.'],
+  tools:[['amount',[['Minimum dry salt (option a)',5,'kg'],['Minimum pickle (option b)',60,'kg']]]]},
+
+ // ---------- heating ----------
+ heat:{type:'opt',title:'Heating',
+  idea:'Heat all parts of the pork muscle to a minimum internal temperature for a minimum time.',
+  needs:['<b>All parts</b> of the pork muscle tissue must reach one of the time and temperature combinations in the table.','The time to raise the internal temperature of the product from <b>15 °C to 49 °C</b> must not be more than <b>2 hours</b>, unless the product is cured or fermented.','At 60.0 °C and above, the time does not need to be monitored if the product is <b>thicker than 5.1 cm</b> at its thinnest point and refrigeration does not begin within <b>5 minutes</b> of reaching 59 °C.'],
+  heatTable:true,
+  tools:[['heat']]},
+
+ // ---------- freezing ----------
+ fr12:{type:'opt',title:'Freezing Methods 1 and 2: controlled by freezer room temperature',
+  idea:'Chill the product to 4 °C or less, then hold it frozen at a set freezer temperature for an uninterrupted number of days.',
+  needs:['Chill the product to <b>4 °C or less</b> first (without freezing it).','Keep the pork muscle, or products containing it, frozen at the indicated temperature for an <b>uninterrupted</b> time at least as long as the table shows.','Remove insulating packaging before freezing starts.','Stack the boxes so air can circulate and the product reaches freezer temperature quickly. <b>Spacers are required and boxes must not be shrink-wrapped.</b>','The time count starts only when the freezer reaches the specified temperature.','If the freezer temperature rises above the maximum for your schedule, either use a different schedule that allows the higher temperature, or <b>restart</b> the count from when it drops back below the maximum.'],
+  table:{head:['Method 1: freezer at −25 °C','Product thickness','Minimum uninterrupted days'],rows:[['Group 1','Up to 25 cm','10'],['Group 2','25 to 50 cm','20']]},
+  table2:{head:['Method 2: freezer temperature','Group 1 (up to 15 cm)','Group 2 (15 to 50 cm)'],rows:[['−15.0 °C','20 days','30 days'],['−23.3 °C','10 days','20 days'],['−28.9 °C','6 days','12 days']]},
+  tools:[['freeze12']]},
+ fr3:{type:'opt',title:'Freezing Method 3: product already frozen, monitored by thermocouple',
+  idea:'The product arrives frozen. Its internal temperature is recorded, and it is held at or below a set temperature for a set number of hours.',
+  needs:['Treat product that is already frozen with <b>one</b> of the time and internal-temperature combinations in the table.','For <b>each lot</b>, monitor the product internal temperature with a <b>thermocouple at the centre of the thickest piece of meat</b>, in the <b>warmest location of the freezer</b> (not close to cooling equipment).','Use properly calibrated recording thermometers and record the temperature continuously.','Keep the charts, which must include the lot number, its description, the number of boxes, and the dates in and out.','<b>Spacers are not required</b> and pallets may be shrink-wrapped.','Temperature is measured to the next lowest tenth of a degree Celsius. If the device cannot read that finely, measure to the next lowest whole degree. For example, if a thermometer cannot read −23.5 °C, freeze the meat to −24 °C.'],
+  table:{head:['Product internal temperature (°C)','(°F)','Minimum time (hours)'],rows:[['−17.8','0','106'],['−20.6','−5','82'],['−23.3','−10','63'],['−26.1','−15','48'],['−28.9','−20','35'],['−31.7','−25','22'],['−34.5','−30','8'],['−37.2','−35','½']]},
+  tools:[['freeze3']]},
+ fr4:{type:'opt',title:'Freezing Method 4: thermocouple first, then freezer temperature',
+  idea:'A two-step method. A thermocouple shows when the whole lot has reached freezer temperature, and then days are counted at that temperature.',
+  needs:['<b>Step 1:</b> as soon as product enters the freezer, place a thermocouple at the <b>centre of the warmest box</b> of the lot, and place that box at the centre of the largest pallet. Use calibrated recording thermometers and record continuously until the product temperature at the centre of the box equals the freezer\'s ambient temperature.','<b>Step 2:</b> the thermocouple may then be removed and the freezing time count begins. Hold the product frozen at the indicated temperature for an <b>uninterrupted</b> time at least as long as in the Method 1 or Method 2 tables.','For each lot, keep the charts for both steps. They include the lot number, description, number of boxes, dates in and out, and the freezing method used. The official log book should be completed.','<b>Spacers are not required</b> and pallets may be shrink-wrapped.'],
+  tools:[['freeze12']]},
+ fr5:{type:'opt',title:'Freezing Method 5: bulk containers of large cuts',
+  idea:'For big cuts in bulk containers, such as a bone-in ham. The product is frozen to −18 °C or colder at the core, then held for the Table C.1.3 time.',
+  needs:['<b>Step 1:</b> make sure refrigerated product put into bulk containers reaches <b>−18 °C or lower</b>. From the start of freezing, monitor the core temperature of <b>each lot</b> with a thermocouple in the <b>middle of the biggest cut</b> in the warmest part of the freezer (not close to a refrigeration unit). Record continuously with calibrated recording thermometers.','<b>Step 2:</b> keep the treated product at the prescribed temperature, without interruption, for the time in the Method 3 table (Table C.1.3).','Because of the container size, <b>spacers cannot be used</b>, and boxes may <b>not</b> be shrink-wrapped.'],
+  tools:[['freeze3']]},
+
+ // ---------- comparisons ----------
+ cmp_approach:{type:'cmp',title:'The three approaches side by side',
+  table:{head:['','Curing','Heating','Freezing'],rows:[
+   ['How it works','Salt cure with set times, temperatures, drying or smoking','All parts of the pork muscle reach a minimum internal temperature for a minimum time','Product is held frozen at or below a set temperature for a set time'],
+   ['Products on the page','Sausages, capicola and coppa, hams and shoulder picnics, boneless loins','Pork products','Pork striated muscle or products containing it'],
+   ['Time scale','Days to weeks','Seconds to hours','Hours to weeks'],
+   ['Watch out for','The curing methods do not guarantee safety from other pathogens (Salmonella, Toxoplasma gondii, E. coli, L. monocytogenes)','Heat-up from 15 to 49 °C within 2 hours unless cured or fermented','Five methods that differ in monitoring, spacers and shrink wrap']]}},
+ cmp_ham:{type:'cmp',title:'Ham and shoulder picnic curing methods compared',
+  table:{head:['','Method 1','Method 2','Method 3'],rows:[
+   ['Cure','At least 4.0 kg salt per 100 kg meat, laid down','Cure mixture of at least 70% salt (traditional), or at least 6 kg salt per 100 kg meat in kraft paper (bag)','Cure mixture of at least 71.5% salt, at least 5.72 kg per 100 kg meat'],
+   ['Curing time','At least 40 days at 2.3 °C or higher','Contact at least 28 days and 3.3 days/kg (traditional). Total at least 40 days and 4.4 days/kg','Contact at least 30 days and 4.4 days/kg, then equalization at least 14 days and 2.2 days/kg'],
+   ['Special points','Overhaul at least once. Soak up to 15 h at 21 °C or less allowed','No soaking. Rinse of 60 seconds or less allowed','3 or 4 applications in the first 14 days. KCl may replace up to half the salt. No soaking'],
+   ['Then','Dry or smoke per Table A.3.3','Dry per Table A.3.3','Dry per Table A.3.3 after equalization']]}},
+ cmp_freeze:{type:'cmp',title:'The five freezing methods compared',
+  table:{head:['Method','Starting point','What is monitored','Time and temperature','Spacers','Shrink wrap'],rows:[
+   ['1','Chilled to 4 °C or less','Freezer room temperature','−25 °C: 10 days (up to 25 cm) or 20 days (25 to 50 cm)','Required','No'],
+   ['2','Chilled to 4 °C or less','Freezer room temperature','−15, −23.3 or −28.9 °C: 20/30, 10/20 or 6/12 days','Required','No'],
+   ['3','Already frozen','Product internal temperature, by thermocouple','Table C.1.3, from 106 hours at −17.8 °C to ½ hour at −37.2 °C','Not required','Acceptable'],
+   ['4','Chilled to 4 °C or less','Thermocouple until product equals freezer temperature, then freezer temperature','Days from the Method 1 or 2 tables, counted after equilibrium','Not required','Acceptable'],
+   ['5','Large cuts in bulk containers','Core temperature, by thermocouple','Reach −18 °C or lower, then the Table C.1.3 time','Cannot be used','Not allowed']]}}
+};
+// ===== TREE DATA END =====
+
+// ---- app state ----
+const app=document.getElementById('app');
+let path=[];
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function focusHeading(){ const h=app.querySelector('h2'); if(h){ h.setAttribute('tabindex','-1'); h.focus(); } }
+const stripTags=h=>{const d=document.createElement('div'); d.innerHTML=h; return d.textContent;};
+
+function trailHtml(){
+  if(!path.length) return '';
+  return '<details class="noprint"><summary>Your answers so far ('+path.filter(p=>p.qid!=='__switch').length+')</summary><ol class="trail">'+
+    path.map(p=>p.qid==='__switch'?'<li><b>'+esc(p.label)+'</b></li>':'<li>'+esc(Q[p.qid].title)+' <b>'+esc(p.label)+'</b></li>').join('')+'</ol></details>';
+}
+function showIntro(){
+  path=[];
+  app.innerHTML='<section class="card"><h2>Find your control method</h2>'+
+   '<p>CFIA describes three ways to destroy <em>Trichinella</em> in pork products: curing, heating and freezing. This tool asks about your product, points you to the matching method, and lets you check your own numbers against the page\'s tables.</p>'+
+   '<p class="small">It takes a few minutes. You can go back at any time.</p>'+
+   '<div class="row"><button type="button" id="go">Start</button><button type="button" class="secondary" id="cmp">Compare the three approaches</button></div>'+
+   '<details><summary>See every question in this tool</summary>'+outline()+'</details></section>';
+  document.getElementById('go').onclick=()=>showQuestion(START);
+  document.getElementById('cmp').onclick=()=>showResult('cmp_approach');
+  focusHeading();
+}
+function showQuestion(id){
+  const q=Q[id];
+  const opts=q.options.map((o,i)=>'<button type="button" class="opt" data-i="'+i+'">'+esc(o.label)+(o.detail?'<span class="d">'+esc(o.detail)+'</span>':'')+'</button>').join('');
+  app.innerHTML='<section class="card"><div class="qnum">Question '+(path.filter(p=>p.qid!=='__switch').length+1)+'</div><h2>'+esc(q.title)+'</h2>'+
+    (q.help?'<div class="help">'+esc(q.help)+'</div>':'')+
+    '<div class="opts" role="group" aria-label="Answer choices">'+opts+'</div>'+
+    '<div class="row noprint"><button type="button" class="secondary" id="back">Back</button><button type="button" class="secondary" id="restart">Start over</button></div>'+
+    trailHtml()+'</section>';
+  app.querySelectorAll('button.opt').forEach(b=>b.onclick=()=>answer(id,parseInt(b.dataset.i,10)));
+  document.getElementById('back').onclick=back;
+  document.getElementById('restart').onclick=showIntro;
+  focusHeading();
+}
+function answer(id,i){
+  const o=Q[id].options[i];
+  path.push({qid:id,label:o.label});
+  if(o.result) showResult(o.result); else showQuestion(o.next);
+}
+function back(){
+  let last; do{ last=path.pop(); }while(last && last.qid==='__switch');
+  if(!last) return showIntro();
+  showQuestion(last.qid);
+}
+function goTo(target,label){
+  path.push({qid:'__switch',label:'Switched approach: '+label});
+  if(target.startsWith('r:')) showResult(target.slice(2)); else showQuestion(target);
+}
+function outline(){
+  const seen=new Set();
+  function walk(id){
+    if(seen.has(id)) return '<li>See: '+esc(Q[id].title)+'</li>';
+    seen.add(id);
+    return '<li><strong>'+esc(Q[id].title)+'</strong><ol>'+Q[id].options.map(o=>{
+      const t=o.result?'<em>→ '+esc(R[o.result].title)+'</em>':'<ol class="outline">'+walk(o.next)+'</ol>';
+      return '<li>'+esc(o.label)+' '+t+'</li>';
+    }).join('')+'</ol></li>';
+  }
+  return '<ol class="outline">'+walk(START)+'</ol>';
+}
+function tableHtml(t){
+  if(!t) return '';
+  return '<div class="tablewrap"><table><thead><tr>'+t.head.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+
+    t.rows.map(r=>'<tr>'+r.map((c,i)=>(i===0?'<th scope="row">':'<td>')+esc(c)+(i===0?'</th>':'</td>')).join('')+'</tr>').join('')+'</tbody></table></div>';
+}
+function heatTableHtml(){
+  return '<div class="tablewrap"><table><thead><tr><th>Minimum internal temperature</th><th>Minimum time</th></tr></thead><tbody>'+
+   HEAT.map(r=>'<tr><td>'+r[0].toFixed(1)+' °C ('+r[1]+' °F)</td><td>'+r[2]+(r[4]?'*':'')+'</td></tr>').join('')+'</tbody></table></div>'+
+   '<p class="small">* At 60.0 °C and above, time does not need to be monitored if the product is thicker than 5.1 cm and refrigeration does not begin within 5 minutes of reaching 59 °C.</p>';
+}
+
+function showResult(id){
+  const r=R[id];
+  let html;
+  if(r.type==='out'){
+    html='<section class="card"><div class="banner out"><div class="big">'+esc(r.title)+'</div><p>'+esc(r.why)+'</p></div>'+
+      (r.actions?'<div class="row noprint">'+r.actions.map((a,i)=>'<button type="button" class="secondary act" data-i="'+i+'">'+esc(a.label)+'</button>').join('')+'</div>':'')+
+      '<p>This does not mean the product has no food safety requirements. If you are unsure, check with CFIA.</p>';
+  } else if(r.type==='cmp'){
+    html='<section class="card"><div class="banner cmp"><div class="big">'+esc(r.title)+'</div></div>'+tableHtml(r.table);
+  } else {
+    html='<section class="card"><div class="banner go"><span class="pill">Method</span><div class="big">'+esc(r.title)+'</div><p>'+r.idea+'</p></div>'+
+      '<h3>What you need to do</h3>'+ul(r.needs)+
+      (r.heatTable?heatTableHtml():'')+tableHtml(r.table)+tableHtml(r.table2)+
+      (r.notes?'<h3>Good to know</h3>'+ul(r.notes):'')+
+      (r.curing?'<div class="note info">ℹ '+CURING_NOTE+'</div>':'')+
+      (r.tools?r.tools.map((t,i)=>'<div class="tool noprint" data-tool="'+t[0]+'" data-idx="'+i+'">'+TOOLS[t[0]].html(t[1],i)+'</div>').join(''):'');
+  }
+  html+=trailHtml()+
+    '<div class="row noprint"><button type="button" class="secondary" id="back">Back</button><button type="button" id="restart">Start over</button><button type="button" class="secondary" id="print">Print</button><button type="button" class="secondary" id="copy">Copy summary</button></div>'+
+    '<p class="small" id="copyMsg"></p><p class="small">Source: <a href="'+URL_PAGE+'" target="_blank" rel="noopener">CFIA, Control recommendations for the inactivation of <em>Trichinella spiralis</em> in pork products</a> (last modified 2022-10-07). A planning aid, not a regulatory decision.</p></section>';
+  app.innerHTML=html;
+  document.getElementById('back').onclick=back;
+  document.getElementById('restart').onclick=showIntro;
+  document.getElementById('print').onclick=()=>{ try{window.print();}catch(e){} };
+  document.getElementById('copy').onclick=()=>copySummary(r);
+  app.querySelectorAll('button.act').forEach(b=>b.onclick=()=>{ const a=r.actions[parseInt(b.dataset.i,10)]; goTo(a.go,a.label.replace('Look at ','').replace(' instead','')); });
+  if(r.tools) r.tools.forEach((t,i)=>TOOLS[t[0]].bind(t[1],i));
+  focusHeading();
+}
+function summaryText(r){
+  const L=['Trichinella control in pork products','Source: '+URL_PAGE,'','Answers:'];
+  path.filter(p=>p.qid!=='__switch').forEach(p=>L.push('- '+Q[p.qid].title+' '+p.label));
+  L.push('','Result: '+r.title);
+  if(r.type==='out') L.push(r.why);
+  else if(r.type==='opt'){ L.push(stripTags(r.idea),'','What you need to do:'); r.needs.forEach(x=>L.push('- '+stripTags(x))); if(r.curing) L.push('','Note: '+stripTags(CURING_NOTE)); }
+  else if(r.type==='cmp'){ L.push(r.table.head.join(' | ')); r.table.rows.forEach(x=>L.push(x.join(' | '))); }
+  return L.join('\n');
+}
+function copySummary(r){
+  const ta=document.createElement('textarea'); ta.value=summaryText(r); ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select(); let ok=false; try{ok=document.execCommand('copy');}catch(e){} document.body.removeChild(ta);
+  document.getElementById('copyMsg').textContent= ok?'Summary copied.':'Copying was blocked here. Use Print instead.';
+}
+
+// ---- calculators ----
+const $=id=>document.getElementById(id);
+const num=id=>{const v=parseFloat($(id).value); return isFinite(v)?v:NaN;};
+const fx=(x,d=1)=>Number(x).toFixed(d);
+const on=(ids,fn)=>ids.forEach(id=>{ $(id).addEventListener('input',fn); $(id).addEventListener('change',fn); });
+const box=(cls,h)=>'<div class="'+cls+'">'+h+'</div>';
+
+const TOOLS={
+ sdia:{
+  html:(m,i)=>'<h3>Check my numbers</h3><label for="sd'+m+'">Casing diameter at the time of stuffing (cm)</label><input type="number" id="sd'+m+'" step="any" min="0" placeholder="for example 5.5"><div class="toolout" id="sd'+m+'o" aria-live="polite"></div>',
+  bind:(m)=>{ const f=()=>{ const d=num('sd'+m), o=$('sd'+m+'o'); if(!isFinite(d)||d<=0){o.innerHTML='';return;}
+      const r=sdiaLookup(m,d); o.innerHTML= r.ok ? box('res','<div class="big">For a '+fx(d,1)+' cm casing:</div>'+ul(r.lines)) : box('no',esc(r.msg)); }; on(['sd'+m],f); }},
+
+ m6:{
+  html:()=>{
+    const rows=[['Pork',120,false],['Spice',2,true],['Wine',0.5,false],['Water and starter culture',1,false],['Sugar',0.8,true],['Sodium nitrite',0.012,true]];
+    const rh=rows.map((r,i)=>'<tr class="m6row"><td><input type="text" value="'+r[0]+'" aria-label="Ingredient name"></td><td><input type="number" step="any" min="0" class="m6kg" value="'+r[1]+'" aria-label="Weight in kg"></td><td style="text-align:center"><input type="checkbox" class="m6dry" '+(r[2]?'checked':'')+' aria-label="Dry ingredient"></td><td><button type="button" class="secondary small m6rm" aria-label="Remove row">×</button></td></tr>').join('');
+    return '<h3>Check my numbers: minimum drying days</h3><p class="small">Pre-filled by combining two examples from the CFIA page: its salt example (formula weights) and its fermenting example (7.6 cm casing, 29 °C for 60 hours). Replace them with your own formula.</p>'+
+     '<div class="tgrid"><div><label for="m6d">Casing diameter at stuffing</label><select id="m6d">'+M6_BASE.map(r=>'<option value="'+r[0]+'"'+(r[0]===7.6?' selected':'')+'>'+r[0]+' cm</option>').join('')+'</select></div>'+
+     '<div><label for="m6salt">Salt (kg)</label><input type="number" id="m6salt" step="any" min="0" value="3.56"></div></div>'+
+     '<label>Other ingredients in the formula (tick the dry ones)</label><div class="tablewrap ing"><table><thead><tr><th>Ingredient</th><th>Weight (kg)</th><th>Dry?</th><th></th></tr></thead><tbody id="m6rows">'+rh+'</tbody></table></div>'+
+     '<div class="row" style="margin-top:6px"><button type="button" class="secondary small" id="m6add">Add ingredient</button></div>'+
+     '<p class="small">The salt is counted in the formula weight and as a dry ingredient automatically.</p>'+
+     '<h3 style="font-size:.95rem">Smoking or fermenting during the holding period (optional)</h3>'+
+     '<div class="tgrid"><div><label for="m6h">Hours held at that temperature</label><input type="number" id="m6h" step="any" min="0" value="60"></div>'+
+     '<div><label for="m6t">Internal product temperature (°C)</label><input type="number" id="m6t" step="any" min="0" value="29"></div></div>'+
+     '<div class="toolout" id="m6o" aria-live="polite"></div>';
+  },
+  bind:()=>{
+    const calc=()=>{
+      const rows=[...document.querySelectorAll('.m6row')];
+      let total=0, dry=0; const salt=num('m6salt'); if(isFinite(salt)){total+=salt;dry+=salt;}
+      rows.forEach(r=>{ const kg=parseFloat(r.querySelector('.m6kg').value); if(isFinite(kg)){ total+=kg; if(r.querySelector('.m6dry').checked) dry+=kg; } });
+      const o=$('m6o'); const sc=saltConc(salt,total,dry);
+      if(!sc||!isFinite(salt)){ o.innerHTML=box('no','Enter the salt weight and the other ingredients.'); return; }
+      const base=M6_BASE.find(r=>r[0]===parseFloat($('m6d').value))[1];
+      const h=num('m6h'), t=num('m6t'); const red=m6Reduction(isFinite(h)?h:0,isFinite(t)?t:0);
+      const d=m6Days(base,red.pct,sc.rounded);
+      let out='<p>Formula weight <b>'+fx(total,3)+' kg</b>, dry ingredients <b>'+fx(dry,3)+' kg</b>. Salt concentration = '+fx(salt,3)+' ÷ ('+fx(total,3)+' − '+fx(dry,3)+') × 100 = '+fx(sc.raw,2)+'%, rounded down to <b>'+fx(sc.rounded,1)+'%</b>.</p>';
+      if(d.notPermitted){ o.innerHTML=box('no',out+'<b>This is below 2.0% salt, which is the lowest level Method 6 allows.</b> Method 6 cannot be used for this formula.'); return; }
+      out+='<p>Baseline drying days for a '+$('m6d').value+' cm casing: <b>'+base+'</b>.</p>';
+      out+='<p>Credit for smoking or fermenting: '+(red.pct>0?'next lowest table values are '+red.hRow+' hours and '+red.tCol+' °C, giving <b>'+red.pct+'%</b>. '+fx(base,0)+' × '+red.pct+'% = '+fx(base*red.pct/100,2)+', rounded down to <b>'+d.reduceDays+' day(s)</b> less.':'none (below 24 hours or below 21.1 °C).')+'</p>';
+      out+='<p>Extra days for reduced salt: '+(d.incPct>0?'<b>+'+d.incPct+'%</b>. '+fx(base,0)+' × '+d.incPct+'% = '+fx(base*d.incPct/100,2)+', rounded up to <b>'+d.addDays+' day(s)</b> more.':'none (salt is 3.4% or higher).')+'</p>';
+      out+='<div class="res"><div class="big">Minimum drying days: '+d.min+'</div>'+base+' − '+d.reduceDays+' + '+d.addDays+' = '+d.min+' days at 10.0 °C or higher, plus a holding period of at least 48 hours at 1.7 °C or higher.</div>';
+      if(red.pct===100) out+=box('wn','The table shows 100% for these values. The page says no drying-room period is needed for <em>Trichinella</em> destruction in that case, though the total holding period must still be at least 48 hours. The formula result above is shown for completeness. Confirm with CFIA if you also use reduced salt.');
+      if(sc.rounded===3.3) out+=box('wn','A calculated salt level from 3.33% up to 3.39% rounds down to 3.3%, which adds 1% to the drying time under the page\'s table. This follows the page literally.');
+      o.innerHTML=out;
+    };
+    $('m6rows').addEventListener('input',calc); $('m6rows').addEventListener('change',calc);
+    on(['m6d','m6salt','m6h','m6t'],calc);
+    $('m6add').onclick=()=>{ const tr=document.createElement('tr'); tr.className='m6row'; tr.innerHTML='<td><input type="text" aria-label="Ingredient name"></td><td><input type="number" step="any" min="0" class="m6kg" aria-label="Weight in kg"></td><td style="text-align:center"><input type="checkbox" class="m6dry" aria-label="Dry ingredient"></td><td><button type="button" class="secondary small m6rm" aria-label="Remove row">×</button></td>'; $('m6rows').appendChild(tr); };
+    $('m6rows').addEventListener('click',e=>{ if(e.target.classList.contains('m6rm')){ e.target.closest('tr').remove(); calc(); } });
+    calc();
+  }},
+
+ ham:{
+  html:(m)=>'<h3>Check my numbers: curing days</h3><div class="tgrid"><div><label for="hw">Weight of the <b>heaviest</b> piece in the lot (kg), before the cure is added</label><input type="number" id="hw" step="any" min="0" placeholder="for example 11.5"></div>'+
+     '<div><label for="hl">Total fresh weight of the lot (kg), optional</label><input type="number" id="hl" step="any" min="0" placeholder="for example 500"></div></div><div class="toolout" id="ho" aria-live="polite"></div>',
+  bind:(m)=>{ const f=()=>{ const W=num('hw'), Lw=num('hl'), o=$('ho'); if(!(W>0)){o.innerHTML='';return;}
+      const L=[]; const c=hamCalc(m,W);
+      if(m==='h1'){ L.push('Cure for at least <b>40 days</b> at 2.3 °C or higher.'); if(Lw>0) L.push('Salt: at least <b>'+fx(Lw*0.04,2)+' kg</b> (4.0 kg per 100 kg of '+fx(Lw,1)+' kg).'); }
+      if(m==='h2a'){ L.push('Cure contact time: <b>'+c.contact+' days</b> ('+c.contactRule+'; 3.3 × '+fx(W,1)+' kg = '+fx(3.3*W,1)+').'); L.push('Total curing time before the drying room: <b>'+c.total+' days</b> ('+c.totalRule+'; 4.4 × '+fx(W,1)+' kg = '+fx(4.4*W,1)+').'); }
+      if(m==='h2b'){ L.push('Wrapped curing time: <b>'+c.total+' days</b> ('+c.totalRule+'; 4.4 × '+fx(W,1)+' kg = '+fx(4.4*W,1)+').'); if(Lw>0) L.push('Salt: at least <b>'+fx(Lw*0.06,2)+' kg</b> (6 kg per 100 kg of '+fx(Lw,1)+' kg).'); }
+      if(m==='h3'){ L.push('Cure contact time: <b>'+c.contact+' days</b> ('+c.contactRule+'; 4.4 × '+fx(W,1)+' kg = '+fx(4.4*W,1)+').'); L.push('Equalization time: <b>'+c.equal+' days</b> ('+c.equalRule+'; 2.2 × '+fx(W,1)+' kg = '+fx(2.2*W,1)+').');
+        if(Lw>0){ const cure=Lw*0.0572; L.push('Cure mixture: at least <b>'+fx(cure,2)+' kg</b> (5.72 kg per 100 kg of '+fx(Lw,1)+' kg). At 71.5% salt, that is at least '+fx(cure*0.715,2)+' kg of salt, and up to half of it may be potassium chloride.'); } }
+      o.innerHTML=box('res','<div class="big">For a heaviest piece of '+fx(W,1)+' kg:</div>'+ul(L)+'<p class="small">The page does not say how to round days per kg. The tool rounds up to whole days, which is the cautious choice.</p>'); }; on(['hw','hl'],f); }},
+
+ hamdry:{
+  html:()=>'<h3>Check my numbers: drying (Table A.3.3)</h3>'+
+     '<label for="hdT">If you dry at <b>one constant temperature</b>, the lowest temperature reached during drying (°C)</label><input type="number" id="hdT" step="any" placeholder="for example 30">'+
+     '<div class="toolout" id="hdo1" aria-live="polite"></div>'+
+     '<label for="hdS">If you dry at <b>two or more temperatures</b>, enter the lowest temperature reached on each drying day (°C), one value per day, separated by commas or new lines</label><textarea id="hdS" placeholder="for example 30, 30, 30, 32, 32 …"></textarea>'+
+     '<div class="toolout" id="hdo2" aria-live="polite"></div>',
+  bind:()=>{
+    const f1=()=>{ const T=num('hdT'), o=$('hdo1'); if(!isFinite(T)){o.innerHTML='';return;}
+      const r=hamDryRow(T); o.innerHTML = r ? box('res','Next lowest table temperature: <b>≥ '+fx(r[0],1)+' °C</b>. Minimum days at the drying temperature: <b>'+r[1]+' days</b>. (Interpolation is not acceptable.)') : box('no','Below 23.9 °C, which is the lowest temperature in the table, so this table cannot be used.'); };
+    const f2=()=>{ const txt=$('hdS').value.trim(), o=$('hdo2'); if(!txt){o.innerHTML='';return;}
+      const temps=txt.split(/[\s,;]+/).map(parseFloat).filter(isFinite); if(!temps.length){o.innerHTML='';return;}
+      const s=hamDrySum(temps), below=temps.filter(T=>!hamDryRow(T)).length;
+      let h='<div class="big">Sum of daily fractions: '+fx(s,3)+' over '+temps.length+' day(s)</div>';
+      let cls;
+      if(s>1.5+EPS){ cls='res'; h+='This is above 1.5, so it meets the page\'s wording.'; }
+      else if(s>=1-EPS){ cls='wn'; h+='This reaches <b>1.0</b>, the value at which each row of the table reaches its own minimum days (for example 25 days × 0.040 = 1.0). But the page\'s text says the sum must be <b>greater than 1.5</b>, which does not match its table, and looks like a typing error. Until CFIA confirms, the cautious choice is to reach the 1.5 stated on the page.'; }
+      else { cls='no'; h+='This is below 1.0, so the drying time is not enough under either reading.'; }
+      if(below) h+='<p>'+below+' day(s) were below 23.9 °C and contribute nothing.</p>';
+      o.innerHTML=box(cls,h); };
+    on(['hdT'],f1); on(['hdS'],f2); }},
+
+ amount:{
+  html:(lines,i)=>'<h3>Check my numbers: how much for my lot?</h3><label for="am'+i+'">Fresh weight of the lot, before curing (kg)</label><input type="number" id="am'+i+'" step="any" min="0" placeholder="for example 250"><div class="toolout" id="am'+i+'o" aria-live="polite"></div>',
+  bind:(lines,i)=>{ const f=()=>{ const W=num('am'+i), o=$('am'+i+'o'); if(!(W>0)){o.innerHTML='';return;}
+      o.innerHTML=box('res','<div class="big">For '+fx(W,1)+' kg of fresh meat:</div>'+ul(lines.map(l=>l[0]+': at least <b>'+fx(W*l[1]/100,2)+' '+l[2]+'</b> ('+l[1]+' '+l[2]+' per 100 kg)'))); }; on(['am'+i],f); }},
+
+ heat:{
+  html:()=>'<h3>Check my numbers: heating time</h3><label for="htT">Minimum internal temperature reached in <b>all parts</b> of the pork muscle (°C)</label><input type="number" id="htT" step="any" placeholder="for example 55">'+
+    '<div class="toolout" id="hto" aria-live="polite"></div>'+
+    '<div class="tgrid"><div><label for="htR">Time to raise the internal temperature from 15 °C to 49 °C (hours), optional</label><input type="number" id="htR" step="any" min="0"></div>'+
+    '<div><label for="htC">Is the product cured or fermented?</label><select id="htC"><option value="n">No</option><option value="y">Yes</option></select></div></div>'+
+    '<div class="toolout" id="hto2" aria-live="polite"></div>',
+  bind:()=>{
+    const f=()=>{ const T=num('htT'), o=$('hto'); if(!isFinite(T)){o.innerHTML='';return;}
+      const r=heatLookup(T);
+      if(!r){ o.innerHTML=box('no','Below 49.0 °C, the lowest temperature in the table. Heating alone cannot be used at this temperature.'); return; }
+      let h='<div class="big">Hold for at least: '+r[2]+'</div>Next lowest table temperature: '+fx(r[0],1)+' °C ('+r[1]+' °F). The page does not say how to treat temperatures between rows, so the tool uses the next lowest row, which is the cautious choice.';
+      if(r[4]) h+='<p>Because this is 60.0 °C or above, the time need not be monitored if the product is thicker than 5.1 cm and refrigeration does not begin within 5 minutes of reaching 59 °C.</p>';
+      o.innerHTML=box('res',h); };
+    const g=()=>{ const t=num('htR'), o=$('hto2'); if(!isFinite(t)){o.innerHTML='';return;}
+      if($('htC').value==='y') o.innerHTML=box('res','The 2-hour limit for heating from 15 °C to 49 °C does not apply to cured or fermented product.');
+      else o.innerHTML= t<=2+EPS ? box('res','<b>'+fx(t,2)+' hours</b> is within the 2-hour limit for heating from 15 °C to 49 °C.') : box('no','<b>'+fx(t,2)+' hours</b> is over the 2-hour limit for heating from 15 °C to 49 °C, and the product is not cured or fermented.'); };
+    on(['htT'],f); on(['htR','htC'],g); }},
+
+ freeze12:{
+  html:()=>'<h3>Check my numbers: freezing days</h3><div class="tgrid"><div><label for="fzT">Freezer room temperature (°C)</label><input type="number" id="fzT" step="any" placeholder="for example −25"></div>'+
+    '<div><label for="fzH">Thickest product (cm)</label><input type="number" id="fzH" step="any" min="0" placeholder="for example 20"></div></div><div class="toolout" id="fzo" aria-live="polite"></div>',
+  bind:()=>{ const f=()=>{ const T=num('fzT'), th=num('fzH'), o=$('fzo'); if(!isFinite(T)||!(th>0)){o.innerHTML='';return;}
+      const a=f1Lookup(T,th), b=f2Lookup(T,th); const L=[];
+      if(th>50){ o.innerHTML=box('no','The tables cover product up to 50 cm thick.'); return; }
+      L.push(a?'<b>Method 1</b> (freezer at −25 °C or colder): <b>'+a.days+' days</b> uninterrupted (Group '+a.group+').':'<b>Method 1</b> needs a freezer at −25 °C or colder. Not met at '+fx(T,1)+' °C.');
+      L.push(b?'<b>Method 2</b> (freezer at '+fx(b.temp,1)+' °C or colder): <b>'+b.days+' days</b> uninterrupted (Group '+b.group+').':'<b>Method 2</b> needs a freezer at −15.0 °C or colder. Not met at '+fx(T,1)+' °C.');
+      const days=[a?a.days:null,b?b.days:null].filter(x=>x!==null);
+      const best= days.length? '<div class="big">Shortest valid: '+Math.min(...days)+' days</div>' : '';
+      o.innerHTML=box(days.length?'res':'no',best+ul(L)+'<p class="small">Start counting only when the freezer reaches the temperature. If it warms above the maximum for your schedule, use another schedule that allows it or restart the count. Methods 1 and 2 need spacers and no shrink wrap. Method 4 uses the same day counts after the product reaches freezer temperature.</p>'); };
+    on(['fzT','fzH'],f); }},
+
+ freeze3:{
+  html:()=>'<h3>Check my numbers: freezing hours (Table C.1.3)</h3><label for="f3T">Product internal temperature reached, measured at the centre of the thickest piece (°C)</label><input type="number" id="f3T" step="any" placeholder="for example −22"><div class="toolout" id="f3o" aria-live="polite"></div>',
+  bind:()=>{ const f=()=>{ const T=num('f3T'), o=$('f3o'); if(!isFinite(T)){o.innerHTML='';return;}
+      const r=f3Lookup(T);
+      o.innerHTML= r ? box('res','<div class="big">Hold for at least: '+(r[1]<1?'½ hour':r[1]+' hours')+'</div>The coldest table row you have reached is '+fx(r[0],1)+' °C. Temperatures between rows are not interpolated. The tool uses the row you have fully reached, which is the cautious choice.') : box('no','Warmer than −17.8 °C, the warmest temperature in the table, so this table cannot be used.'); };
+    on(['f3T'],f); }}
+};
+
+showIntro();
+</script>
+</body>
+</html>
