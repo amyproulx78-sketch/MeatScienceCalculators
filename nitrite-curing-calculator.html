@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nitrite and Nitrate Curing Calculator</title>
+<style>
+:root{
+  --bg:#ffffff; --fg:#1b1f23; --muted:#5b6670; --card:#f5f7f9; --line:#d3d9df;
+  --accent:#1c5d99; --accent-fg:#ffffff; --pass:#1b6e3a; --pass-bg:#e6f4ea; --fail:#a4262c; --fail-bg:#fbe9ea;
+  --warn:#7a5200; --warn-bg:#fff4d6; --info-bg:#e8f1fa; --zone-low:#f2cb72; --zone-ok:#7fd49a; --zone-hi:#f19aa0;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181c; --fg:#e8ecef; --muted:#9aa6b0; --card:#1d2329; --line:#35404a;
+    --accent:#6fb0ea; --accent-fg:#0b1218; --pass:#7fd49a; --pass-bg:#16301f; --fail:#ff9a9f; --fail-bg:#3a1a1c;
+    --warn:#f2cb72; --warn-bg:#3a2f12; --info-bg:#1a2733; --zone-low:#8a6d1f; --zone-ok:#2f7a48; --zone-hi:#8a3b40;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:840px;margin:0 auto;padding:14px}
+h1{font-size:1.5rem;margin:.2rem 0 .3rem}
+h2{font-size:1.1rem;margin:0 0 .7rem}
+h3{font-size:1rem;margin:1rem 0 .3rem}
+p{margin:.3rem 0}
+a{color:var(--accent)}
+.sub{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin:14px 0}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+label{display:block;font-weight:600;font-size:.92rem;margin-bottom:3px}
+.hint{font-weight:400;color:var(--muted);font-size:.84rem}
+select,input[type=number]{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-weight:400;font-size:.92rem;margin:6px 0}
+.chk input{margin-top:4px;flex:none}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);padding:9px 18px;font-weight:600}
+button.secondary{background:transparent;color:var(--accent)}
+button.big{width:100%;padding:12px;font-size:1.05rem;margin-top:14px}
+.tabs{display:flex;margin:0 0 12px;flex-wrap:wrap}
+.tabs button{border-radius:0;background:var(--bg);color:var(--accent);flex:1;min-width:140px}
+.tabs button:first-child{border-radius:6px 0 0 6px}
+.tabs button:last-child{border-radius:0 6px 6px 0}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-fg)}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hidden{display:none!important}
+.verdict{border-radius:10px;padding:14px 16px;border:2px solid;margin:12px 0}
+.verdict.pass{background:var(--pass-bg);border-color:var(--pass)}
+.verdict.fail{background:var(--fail-bg);border-color:var(--fail)}
+.verdict.warn{background:var(--warn-bg);border-color:var(--warn)}
+.verdict .big{font-size:1.2rem;font-weight:700}
+.verdict.pass .big{color:var(--pass)} .verdict.fail .big{color:var(--fail)} .verdict.warn .big{color:var(--warn)}
+.result-main{text-align:center;padding:6px 0 2px}
+.result-main .num{font-size:2.6rem;font-weight:800;color:var(--accent);line-height:1.1}
+.note{border-radius:8px;padding:8px 12px;margin:8px 0;font-size:.92rem;border:1px solid}
+.note.bad{background:var(--fail-bg);border-color:var(--fail)}
+.note.warn{background:var(--warn-bg);border-color:var(--warn)}
+.note.info{background:var(--info-bg);border-color:var(--accent)}
+.errbox{background:var(--fail-bg);border:2px solid var(--fail);border-radius:10px;padding:12px 16px}
+.errbox h2{color:var(--fail);margin-bottom:.3rem}
+table{border-collapse:collapse;width:100%;font-size:.9rem;margin-top:6px}
+th,td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td.r,th.r{text-align:right}
+.tablewrap{overflow-x:auto}
+.gauge{position:relative;height:26px;border-radius:6px;overflow:hidden;display:flex;border:1px solid var(--line);margin:6px 0 2px}
+.gauge div.z{height:100%}
+.gmark{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--fg)}
+.gscale{position:relative;height:18px;font-size:.75rem;color:var(--muted)}
+.gscale span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+details{margin-top:12px} summary{cursor:pointer;font-weight:600}
+ol.steps{padding-left:22px;margin:.3rem 0} ol.steps li{margin:4px 0}
+code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88em}
+.small{font-size:.85rem;color:var(--muted)}
+.ok{color:var(--pass);font-weight:700} .no{color:var(--fail);font-weight:700} .mid{color:var(--warn);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Nitrite and Nitrate Curing Calculator</h1>
+<p class="sub">Work out how much nitrite or nitrate to add to a meat product to stay within Canadian limits, or check an amount you plan to add. All weights are in kilograms and grams, and levels are in ppm (mg per kg).</p>
+
+<section class="card" aria-labelledby="s1">
+  <h2 id="s1">Step 1: Product and Curing Method</h2>
+  <div class="grid">
+    <div>
+      <label for="category">Product</label>
+      <select id="category">
+        <option value="other">Meat product other than side bacon</option>
+        <option value="bacon">Side bacon (cured pork bellies)</option>
+      </select>
+    </div>
+    <div>
+      <label for="meat">Meat in the product</label>
+      <select id="meat"><option value="red">Red meat (beef, pork, etc.)</option><option value="poultry">Poultry</option></select>
+    </div>
+    <div>
+      <label for="process">Curing process</label>
+      <select id="process">
+        <option value="rapid">Rapid cure (nitrite)</option>
+        <option value="slow">Slow cure (nitrate and/or nitrite; days to weeks)</option>
+      </select>
+    </div>
+  </div>
+
+  <h3 style="margin-top:14px">How is the cure added?</h3>
+  <div class="tabs" role="tablist" aria-label="How the cure is added">
+    <button type="button" role="tab" id="tabEmulsion" aria-selected="true">Batter or emulsion</button>
+    <button type="button" role="tab" id="tabInject" aria-selected="false">Injection</button>
+    <button type="button" role="tab" id="tabBrine" aria-selected="false">Brine or marinade soak</button>
+    <button type="button" role="tab" id="tabRub" aria-selected="false">Dry rub</button>
+  </div>
+  <p class="small" id="methodNote"></p>
+</section>
+
+<section class="card" aria-labelledby="s2">
+  <h2 id="s2">Step 2: Curing Ingredient</h2>
+  <div class="grid">
+    <div style="grid-column:1/-1">
+      <label for="source">Which ingredient supplies the nitrite or nitrate?</label>
+      <select id="source"></select>
+    </div>
+    <div>
+      <label for="n2">Nitrite in the ingredient (%) <span class="hint">as sodium nitrite</span></label>
+      <input type="number" id="n2" step="any" min="0" max="100">
+    </div>
+    <div>
+      <label for="n3">Nitrate in the ingredient (%) <span class="hint">as sodium nitrate</span></label>
+      <input type="number" id="n3" step="any" min="0" max="100">
+    </div>
+  </div>
+  <p class="small" id="srcNote" style="margin-top:6px"></p>
+</section>
+
+<section class="card" aria-labelledby="s3b">
+  <h2 id="s3b">Step 3: Describe the Batch</h2>
+
+  <div id="pEmulsion" class="grid">
+    <div>
+      <label for="batterW">Weight of batter or emulsion, before the cure is added (kg)</label>
+      <input type="number" id="batterW" step="any" min="0" value="100">
+    </div>
+    <div>
+      <label for="mBlock">Meat block weight (kg) <span class="hint">optional, for the USDA comparison</span></label>
+      <input type="number" id="mBlock" step="any" min="0" placeholder="meat and poultry only">
+    </div>
+  </div>
+
+  <div id="pMeat" class="hidden" style="margin-bottom:10px">
+    <div class="grid">
+      <div>
+        <label for="meatW">Green weight of the meat (kg) <span class="hint">before injection, soaking or rubbing</span></label>
+        <input type="number" id="meatW" step="any" min="0" value="100">
+      </div>
+      <div id="pumpBox">
+        <label for="pump">Pump (gain) (%) <span class="hint">brine added as % of green weight</span></label>
+        <input type="number" id="pump" step="any" min="0" value="15">
+      </div>
+      <div id="brineModeBox" class="hidden">
+        <label for="brineMode">How should the soak be treated?</label>
+        <select id="brineMode">
+          <option value="pickup">Large pieces: use % pick-up (hams, bellies)</option>
+          <option value="equil">Small pieces with large surface area: equilibrium</option>
+        </select>
+      </div>
+      <div id="pickupBox" class="hidden">
+        <label for="pickup">Pick-up (%) <span class="hint">brine absorbed as % of green weight</span></label>
+        <input type="number" id="pickup" step="any" min="0" value="10">
+      </div>
+    </div>
+  </div>
+
+  <div id="pLiquid" class="hidden">
+    <h3 style="margin-top:6px">Brine or marinade recipe <span class="hint">(everything except the curing ingredient)</span></h3>
+    <div class="grid">
+      <div><label for="bWater">Water (kg)</label><input type="number" id="bWater" step="any" min="0" value="134"></div>
+      <div><label for="bSalt">Salt (kg)</label><input type="number" id="bSalt" step="any" min="0" value="40"></div>
+      <div><label for="bOther">Other ingredients (kg) <span class="hint">phosphate, erythorbate, spices, etc.</span></label><input type="number" id="bOther" step="any" min="0" value="7.95"></div>
+    </div>
+  </div>
+
+  <div id="pRub" class="hidden">
+    <label class="chk"><input type="checkbox" id="racks"><span>Dry rub cured product cured on <strong>racks</strong>. CFIA allows a higher limit for these products.</span></label>
+  </div>
+
+  <div style="margin-top:10px;max-width:340px">
+    <label for="prevPct">Previously cured meat in the batch (% of batch weight) <span class="hint">e.g. cured rework</span></label>
+    <input type="number" id="prevPct" step="any" min="0" max="100" value="0">
+  </div>
+</section>
+
+<section class="card" aria-labelledby="s4">
+  <h2 id="s4">Step 4: What Do You Want to Calculate?</h2>
+  <div class="grid">
+    <div>
+      <label for="mode">I want to…</label>
+      <select id="mode">
+        <option value="target">Find the amount to add for a target level</option>
+        <option value="check">Check an amount I plan to add</option>
+      </select>
+    </div>
+    <div id="targetBox">
+      <label for="target"><span id="targetLabel">Target level (ppm)</span></label>
+      <input type="number" id="target" step="any" min="0" value="150">
+    </div>
+    <div id="amountBox" class="hidden">
+      <label for="amount">Amount of curing ingredient (g)</label>
+      <input type="number" id="amount" step="any" min="0" value="23">
+    </div>
+  </div>
+  <button type="button" class="big" id="calc">Calculate</button>
+  <p class="small" style="margin-top:10px"><strong>Try the CFIA worked examples:</strong></p>
+  <div class="row" style="margin-top:4px">
+    <button type="button" class="secondary" id="exA">Sausage emulsion A</button>
+    <button type="button" class="secondary" id="exB">Sausage emulsion B</button>
+    <button type="button" class="secondary" id="exI">Injected product</button>
+  </div>
+</section>
+
+<section id="done" class="card hidden" aria-live="polite" aria-labelledby="s5">
+  <h2 id="s5">Results</h2>
+  <div id="resBody"></div>
+</section>
+
+<section id="error" class="errbox hidden" role="alert">
+  <h2>Error</h2>
+  <p id="errMsg"></p>
+</section>
+
+<section class="card">
+  <h2>Notes and limitations</h2>
+  <ul class="small">
+    <li><strong>Source of the limits.</strong> The limits come from the CFIA page <em>Preventive control recommendations on the use of nitrites in the curing of meat products</em> (page dated 2021-10-06). Sodium nitrite is limited to 200 ppm (20 g per 100 kg), or 120 ppm for side bacon (12 g per 100 kg of pork bellies). In slow-cured products, sodium nitrate up to 200 ppm may be used in addition to nitrite. Dry rub cured products on racks may use up to 62 g of nitrite and 186 g of nitrate salts per 100 kg. To be called "cured", a product needs salt and at least 100 ppm of the nitrite or nitrate salts, singly or combined. Check the current CFIA page, since it may change.</li>
+    <li><strong>What "ppm" means here.</strong> Levels are at the <em>input</em> stage: the nitrite or nitrate added, per kg of product. They are not residual levels in the finished product. 1 ppm = 1 mg/kg.</li>
+    <li><strong>Weight basis.</strong> For batters, CFIA's example divides by the total batter weight including the cure. For injection, it divides by the weight <em>after</em> injection (green weight plus pump). The USDA handbook instead divides by the green weight before injection, so the same brine gives a higher ppm. The USDA limits also differ (for example 156 ppm for comminuted products). Results here use the CFIA basis. The USDA figure is shown only for comparison.</li>
+    <li><strong>Brine and marinade soaks, and dry rubs.</strong> The CFIA page gives examples for batters and injection only. For soaks, this tool applies the same input-level idea and the USDA handbook's two immersion methods (pick-up, or equilibrium of meat and brine). For dry rubs it divides by the green weight of the meat. Confirm these choices with CFIA or your food safety professional.</li>
+    <li><strong>Potassium salts.</strong> The limits are for sodium salts. Potassium nitrite and nitrate are converted to sodium equivalents by molar mass (81.07% and 84.07%), which is how the USDA handbook treats potassium nitrite.</li>
+    <li><strong>Celery and vegetable powders.</strong> Enter the supplier's tested nitrite (cultured powder) or nitrate (non-converted powder) percentage. CFIA says the level of preformed nitrite must be known, the powder must be validated, and non-converted nitrate powders with a starter culture are only for emulsified red meat products, not poultry and not injection.</li>
+    <li><strong>Safety.</strong> Pure sodium nitrite and nitrate are dangerous in small amounts. Weigh them with a suitable scale, keep bulk salts secure, and keep a record log of their use, as CFIA advises. Premixed cure mixes are safer to handle.</li>
+    <li><strong>Not a validation.</strong> This is a learning tool. Real formulations must be checked against current regulations by a qualified professional.</li>
+  </ul>
+</section>
+
+</div>
+
+<script>
+// ===== CORE START =====
+const EPS=1e-6;
+const MM={Na:22.990,K:39.098,N:14.007,O:15.999};
+const NaNO2=MM.Na+MM.N+2*MM.O, KNO2=MM.K+MM.N+2*MM.O, NaNO3=MM.Na+MM.N+3*MM.O, KNO3=MM.K+MM.N+3*MM.O;
+const K_NITRITE_AS_NA=Math.round(10000*NaNO2/KNO2)/100;   // 81.07
+const K_NITRATE_AS_NA=Math.round(10000*NaNO3/KNO3)/100;   // 84.07
+
+const SOURCES={
+  na_nitrite:{label:'Sodium nitrite (pure)', n2:100, n3:0},
+  mix625:{label:'Cure mix with 6.25% sodium nitrite (e.g. Prague Powder, as in the CFIA example)', n2:6.25, n3:0},
+  k_nitrite:{label:'Potassium nitrite (pure), as sodium nitrite equivalent', n2:K_NITRITE_AS_NA, n3:0},
+  na_nitrate:{label:'Sodium nitrate (pure)', n2:0, n3:100},
+  k_nitrate:{label:'Potassium nitrate (pure), as sodium nitrate equivalent', n2:0, n3:K_NITRATE_AS_NA},
+  drymix:{label:'Dry cure mix with 1% sodium nitrite and 4% sodium nitrate (USDA handbook example)', n2:1, n3:4},
+  celery_pre:{label:'Cultured celery or vegetable powder with preformed nitrite (enter supplier\'s %)', n2:null, n3:0},
+  veg_nitrate:{label:'Non-converted celery or vegetable powder, nitrate source with starter culture (enter supplier\'s %)', n2:0, n3:null},
+  custom:{label:'Other cure mix (enter the percentages)', n2:null, n3:null}
+};
+const USDA_LIMITS={emulsion:[156,1718,'comminuted products'], inject:[200,700,'pumped products'], brine:[200,700,'immersion cured products'], rub:[625,2187,'dry cured products']};
+
+function limitsFor(f){
+  const rack = f.method==='rub' && f.racks && !f.bacon;
+  return {L2: f.bacon?120:(rack?620:200), L3: rack?1860:200, rack};
+}
+
+// Every method gives ppm = 1000*a*n*ing / (b + c*ing/1000), with n a fraction and ing in g.
+function buildModel(f){
+  if(f.method==='emulsion'){
+    return {kind:'emulsion', a:1, b:f.batterW, c:1,
+            usda: f.mBlock>0 ? {a:1,b:f.mBlock,c:0} : null};
+  }
+  if(f.method==='inject' || (f.method==='brine' && f.brineMode==='pickup')){
+    const pct = f.method==='inject' ? f.pump : f.pickup, p=pct/100, r=p/(1+p);
+    return {kind:'m1', pct, p, r, a:r, b:f.B0, c:1, usda:{a:p,b:f.B0,c:1}};
+  }
+  if(f.method==='brine'){
+    return {kind:'m2', a:1, b:f.meatW+f.B0, c:1, usda:{a:1,b:f.meatW+f.B0,c:1}};
+  }
+  return {kind:'rub', a:1, b:f.meatW, c:0, usda:{a:1,b:f.meatW,c:0}};
+}
+const ppmOf=(m,n,ing)=>1000*m.a*n*ing/(m.b+m.c*ing/1000);
+function solveAmount(m,T,n){
+  const den=1000*m.a*n - T*m.c/1000;
+  return (n>0 && den>0) ? T*m.b/den : null;
+}
+
+function evaluate(f){
+  const m=buildModel(f), lim=limitsFor(f);
+  const n2=f.n2/100, n3=f.n3/100;
+  // ---- decide the amount of curing ingredient ----
+  let ing, targetAnalyte=null;
+  if(f.mode==='target'){
+    targetAnalyte = n2>0 ? 'nitrite' : 'nitrate';
+    ing = solveAmount(m, f.target, targetAnalyte==='nitrite'?n2:n3);
+    if(ing===null) return {error:'No amount of this ingredient can reach that target with these batch details. Check the weights and percentages.'};
+  } else ing=f.amount;
+
+  const ppm2=ppmOf(m,n2,ing), ppm3=ppmOf(m,n3,ing);
+  const m2=ing*n2, m3=ing*n3;
+
+  // ---- amounts at the limits and at the 'cured' minimum ----
+  const maxByNitrite = n2>0 ? solveAmount(m,lim.L2,n2) : null;
+  const maxByNitrate = n3>0 ? solveAmount(m,lim.L3,n3) : null;
+  let maxAmt=null, maxBy=null;
+  [['nitrite',maxByNitrite],['nitrate',maxByNitrate]].forEach(([k,v])=>{ if(v!==null && (maxAmt===null||v<maxAmt)){maxAmt=v;maxBy=k;} });
+  const minCured = solveAmount(m,100,n2+n3);
+
+  // ---- status ----
+  const over2 = n2>0 && ppm2>lim.L2+EPS, over3 = n3>0 && ppm3>lim.L3+EPS;
+  const below100 = (ppm2+ppm3) < 100-EPS;
+  const issues=[];
+  if(over2) issues.push({lvl:'bad',t:'Nitrite is above the CFIA limit of '+lim.L2+' ppm by '+(ppm2-lim.L2).toFixed(2)+' ppm.'});
+  if(over3) issues.push({lvl:'bad',t:'Nitrate is above the CFIA limit of '+lim.L3+' ppm by '+(ppm3-lim.L3).toFixed(2)+' ppm.'});
+  if(n3>0 && f.process==='rapid' && f.source!=='veg_nitrate') issues.push({lvl:'bad',t:'Nitrate salts are used in slow curing. CFIA describes rapid curing as using nitrite, so choose "Slow cure" only if that is your process.'});
+  if(f.source==='veg_nitrate'){
+    if(f.method!=='emulsion' || f.meat==='poultry') issues.push({lvl:'bad',t:'CFIA permits non-converted vegetable nitrate powder with a starter culture only for emulsified red meat products. It cannot be used for poultry products or for products cured by pumping or injection.'});
+    issues.push({lvl:'info',t:'With a nitrate source and starter culture, your preventive control plan must set the minimum incubation (hold) time for nitrate to convert to nitrite before heat treatment. If the culture maker has not validated it for your product, you need to validate the process as CFIA describes.'});
+  }
+  if(f.source==='celery_pre') issues.push({lvl:'info',t:'Use the nitrite level certified for your powder. CFIA says you must know the level of preformed nitrite, and the powder must be validated as effective for its purpose.'});
+  if(f.prevPct>10) issues.push({lvl:'warn',t:'Previously cured meat makes up '+f.prevPct+'% of the batch, which is more than 10%. CFIA says this will typically require the nitrite and nitrate input to be recalculated to account for what those ingredients already contain.'});
+  if(below100 && !over2 && !over3) issues.push({lvl:'warn',t:'The total nitrite and nitrate is below 100 ppm. Under Canadian Standards of Identity Volume 7, a product needs salt and at least 100 ppm to be called "cured".'});
+  if((f.source==='na_nitrite'||f.source==='k_nitrite'||f.source==='na_nitrate'||f.source==='k_nitrate') && ing<10) issues.push({lvl:'info',t:'This is a very small amount ('+ing.toFixed(2)+' g). Use a scale that reads to at least 0.1 g, or use a cure mix so the weighing is less critical.'});
+  if(f.source==='na_nitrite'||f.source==='k_nitrite'||f.source==='na_nitrate'||f.source==='k_nitrate') issues.push({lvl:'info',t:'Keep bulk nitrite and nitrate salts secure and record their use in a log, as CFIA advises.'});
+
+  // ---- extras for liquids ----
+  let extra={};
+  if(m.kind==='m1'){
+    const B=f.B0+ing/1000;
+    const c2=1000*n2*ing/B, c3=1000*n3*ing/B;
+    const pm=(c,L)=> c>L ? 100*L/(c-L) : Infinity;
+    const pmu=(c,L)=> c>0 ? 100*L/c : Infinity;
+    const cand=[]; if(n2>0)cand.push(pm(c2,lim.L2)); if(n3>0)cand.push(pm(c3,lim.L3));
+    const candU=[]; if(n2>0)candU.push(pmu(c2,lim.L2)); if(n3>0)candU.push(pmu(c3,lim.L3));
+    extra={B, c2, c3, maxPct:Math.min(...cand), maxPctUsda:Math.min(...candU), pct:m.pct,
+           meatPerBatch: (f.method==='inject') ? B/(m.p) : B/(m.p)};
+  }
+  // ---- USDA comparison ----
+  let usda=null;
+  if(m.usda){
+    const u=USDA_LIMITS[f.method];
+    const u2=ppmOf(m.usda,n2,ing), u3=ppmOf(m.usda,n3,ing);
+    usda={ppm2:u2, ppm3:u3, L2:u[0], L3:u[1], name:u[2], same: Math.abs(u2-ppm2)<1e-9 && Math.abs(u3-ppm3)<1e-9};
+  }
+  // ---- per 100 kg ----
+  let per100;
+  if(m.kind==='emulsion') per100 = ing/f.batterW*100;
+  else if(m.kind==='rub' || m.kind==='m2') per100 = ing/f.meatW*100;
+  else per100 = ing*(100*m.p)/(f.B0+ing/1000);  // ingredient carried by the brine that goes into 100 kg of green meat
+
+  return {m, lim, ing, ppm2, ppm3, m2, m3, n2, n3, over2, over3, below100, maxAmt, maxBy, maxByNitrite, maxByNitrate, minCured,
+          issues, extra, usda, per100, targetAnalyte,
+          status: (over2||over3||issues.some(i=>i.lvl==='bad')) ? 'fail' : (below100?'warn':'pass')};
+}
+// ===== CORE END =====
+
+// ---- UI ----
+const $=id=>document.getElementById(id);
+const g=(id)=>{const v=parseFloat($(id).value); return isFinite(v)?v:NaN;};
+let method='emulsion';
+const METHOD_NOTES={
+  emulsion:'The cure is mixed directly into a batter or emulsion (sausages, loaves, etc.). Level = nitrite or nitrate per kg of total batter, including the cure.',
+  inject:'A brine containing the cure is injected into whole muscle. Level = nitrite or nitrate delivered by the brine, per kg of finished (injected) product.',
+  brine:'Meat is soaked in, or tumbled with, a liquid brine or marinade that contains the cure. The CFIA page has no worked example for this, so the USDA handbook\'s two immersion methods are used.',
+  rub:'The cure is applied to the surface in a dry rub. Level = nitrite or nitrate applied, per kg of green meat.'
+};
+function fillSources(){
+  $('source').innerHTML=Object.entries(SOURCES).map(([k,v])=>'<option value="'+k+'">'+v.label+'</option>').join('');
+  applySource();
+}
+function applySource(){
+  const s=SOURCES[$('source').value];
+  if(s.n2!==null) $('n2').value=s.n2; else if($('source').value!=='custom') $('n2').value='';
+  if(s.n3!==null) $('n3').value=s.n3; else if($('source').value!=='custom') $('n3').value='';
+  const k=$('source').value;
+  $('srcNote').textContent = k==='celery_pre' ? 'Enter the nitrite (as sodium nitrite) the supplier certifies for the powder.' :
+    k==='veg_nitrate' ? 'Enter the nitrate (as sodium nitrate) the supplier certifies for the powder.' :
+    k==='custom' ? 'Enter the percentage of sodium nitrite and of sodium nitrate in your mix.' : 'Percentages are of the ingredient by weight. You can edit them if your product differs.';
+  refreshTargetLabel();
+}
+function refreshTargetLabel(){
+  const n2=g('n2');
+  $('targetLabel').textContent = (isFinite(n2)&&n2>0) ? 'Target nitrite level (ppm)' : 'Target nitrate level (ppm)';
+}
+function refresh(){
+  ['Emulsion','Inject','Brine','Rub'].forEach(n=>$('tab'+n).setAttribute('aria-selected', n.toLowerCase()===method));
+  $('methodNote').textContent=METHOD_NOTES[method];
+  $('pEmulsion').classList.toggle('hidden', method!=='emulsion');
+  $('pMeat').classList.toggle('hidden', method==='emulsion');
+  $('pumpBox').classList.toggle('hidden', method!=='inject');
+  $('brineModeBox').classList.toggle('hidden', method!=='brine');
+  const m1=(method==='brine' && $('brineMode').value==='pickup');
+  $('pickupBox').classList.toggle('hidden', !m1);
+  $('pLiquid').classList.toggle('hidden', !(method==='inject'||method==='brine'));
+  $('pRub').classList.toggle('hidden', method!=='rub');
+  $('targetBox').classList.toggle('hidden', $('mode').value!=='target');
+  $('amountBox').classList.toggle('hidden', $('mode').value!=='check');
+  refreshTargetLabel();
+}
+[['tabEmulsion','emulsion'],['tabInject','inject'],['tabBrine','brine'],['tabRub','rub']].forEach(([id,m])=>$(id).onclick=()=>{method=m;refresh();});
+['mode','brineMode'].forEach(id=>$(id).addEventListener('change',refresh));
+$('n2').addEventListener('input',refreshTargetLabel);
+$('source').addEventListener('change',applySource);
+
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function showError(msg){ $('done').classList.add('hidden'); $('errMsg').textContent=msg; $('error').classList.remove('hidden'); $('error').scrollIntoView({behavior:'smooth',block:'nearest'}); }
+const fx=(x,d=2)=>Number(x).toFixed(d);
+function fmtPpm(x,limit){ let d=1; if(limit!==undefined && x>limit && Math.round(x*10)/10<=limit) d=2; return x.toFixed(d); }
+
+function readForm(){
+  const f={ method, bacon:$('category').value==='bacon', meat:$('meat').value, process:$('process').value, source:$('source').value,
+    n2:g('n2')||0, n3:g('n3')||0, mode:$('mode').value, target:g('target'), amount:g('amount'),
+    batterW:g('batterW'), mBlock:g('mBlock'), meatW:g('meatW'), pump:g('pump'), pickup:g('pickup'), brineMode:$('brineMode').value,
+    racks:$('racks').checked, prevPct:g('prevPct')||0,
+    B0:(g('bWater')||0)+(g('bSalt')||0)+(g('bOther')||0) };
+  return f;
+}
+function validate(f){
+  if(!(f.n2>0||f.n3>0)) return 'Enter the percentage of nitrite or nitrate in the curing ingredient.';
+  if(f.n2<0||f.n3<0||f.n2>100||f.n3>100) return 'Percentages must be between 0 and 100.';
+  if(f.mode==='target' && !(f.target>0)) return 'Enter a target level in ppm greater than 0.';
+  if(f.mode==='check' && !(f.amount>=0)) return 'Enter the amount of curing ingredient in grams (0 or more).';
+  if(f.method==='emulsion' && !(f.batterW>0)) return 'Enter the weight of the batter or emulsion in kg.';
+  if(f.method!=='emulsion' && !(f.meatW>0)) return 'Enter the green weight of the meat in kg.';
+  if(f.method==='inject'){ if(!(f.pump>0)) return 'Enter the pump (gain) as a percentage greater than 0.'; if(!(f.B0>0)) return 'Enter the brine ingredients (water, salt, other) in kg.'; }
+  if(f.method==='brine'){ if(!(f.B0>0)) return 'Enter the brine or marinade ingredients (water, salt, other) in kg.'; if(f.brineMode==='pickup' && !(f.pickup>0)) return 'Enter the pick-up as a percentage greater than 0.'; }
+  return null;
+}
+function run(){
+  $('error').classList.add('hidden');
+  const f=readForm(); const bad=validate(f); if(bad) return showError(bad);
+  const r=evaluate(f); if(r.error) return showError(r.error);
+  render(f,r);
+}
+
+function gaugeHtml(label,value,min,limit){
+  const max=Math.max(limit*1.3,value*1.08), pc=x=>Math.min(100,100*x/max);
+  const zones=[]; if(min>0) zones.push(['var(--zone-low)',pc(min)]);
+  zones.push(['var(--zone-ok)',pc(limit)-(min>0?pc(min):0)]); zones.push(['var(--zone-hi)',100-pc(limit)]);
+  const z=zones.map(([c,w])=>'<div class="z" style="background:'+c+';width:'+w+'%"></div>').join('');
+  const ticks=(min>0?'<span style="left:'+pc(min)+'%">'+min+'</span>':'')+'<span style="left:'+pc(limit)+'%">'+limit+'</span>';
+  return '<div><strong>'+label+'</strong>: '+fmtPpm(value,limit)+' ppm</div><div class="gauge" role="img" aria-label="'+label+' '+fmtPpm(value,limit)+' ppm against a limit of '+limit+' ppm">'+z+'<div class="gmark" style="left:calc('+pc(value)+'% - 1px)"></div></div><div class="gscale">'+ticks+'</div>';
+}
+function steps(f,r){
+  const m=r.m, L=[];
+  const nm='the curing ingredient';
+  if(r.n2>0) L.push('Nitrite added = '+fx(r.ing,2)+' g × '+fx(f.n2,2)+'% = <strong>'+fx(r.m2,3)+' g</strong> sodium nitrite.');
+  if(r.n3>0) L.push('Nitrate added = '+fx(r.ing,2)+' g × '+fx(f.n3,2)+'% = <strong>'+fx(r.m3,3)+' g</strong> sodium nitrate.');
+  const out=(m_,ppm,word)=>{
+    if(m.kind==='emulsion'){ const tot=f.batterW+r.ing/1000;
+      L.push('Total batter weight = '+fx(f.batterW,3)+' kg + '+fx(r.ing/1000,3)+' kg of cure = '+fx(tot,3)+' kg.');
+      L.push(word+' level = '+fx(m_,3)+' g ÷ '+fx(tot,3)+' kg × 1000 = <strong>'+fmtPpm(ppm)+' mg/kg (ppm)</strong>.'); }
+    else if(m.kind==='m1'){ const B=r.extra.B;
+      L.push('Total brine weight = '+fx(f.B0,3)+' kg of other ingredients + '+fx(r.ing/1000,3)+' kg of cure = '+fx(B,3)+' kg.');
+      L.push(word+' in the brine = '+fx(m_,3)+' g ÷ '+fx(B,3)+' kg × 1000 = '+fx(1000*m_/B,1)+' ppm.');
+      L.push('The brine is '+fx(m.pct,1)+' ÷ (100 + '+fx(m.pct,1)+') = '+fx(100*m.r,2)+'% of the finished weight, so level in the product = '+fx(1000*m_/B,1)+' × '+fx(m.pct,1)+' ÷ '+fx(100+m.pct,1)+' = <strong>'+fmtPpm(ppm)+' mg/kg (ppm)</strong>.'); }
+    else if(m.kind==='m2'){ const B=f.B0+r.ing/1000;
+      L.push('Meat and brine are treated as one system: '+fx(f.meatW,3)+' kg meat + '+fx(B,3)+' kg brine (including the cure) = '+fx(f.meatW+B,3)+' kg.');
+      L.push(word+' level = '+fx(m_,3)+' g ÷ '+fx(f.meatW+B,3)+' kg × 1000 = <strong>'+fmtPpm(ppm)+' mg/kg (ppm)</strong>.'); }
+    else { L.push(word+' level = '+fx(m_,3)+' g ÷ '+fx(f.meatW,3)+' kg of green meat × 1000 = <strong>'+fmtPpm(ppm)+' mg/kg (ppm)</strong>.'); }
+  };
+  if(r.n2>0) out(r.m2,r.ppm2,'Nitrite');
+  if(r.n3>0) out(r.m3,r.ppm3,'Nitrate');
+  return '<ol class="steps">'+L.map(x=>'<li>'+x+'</li>').join('')+'</ol>';
+}
+
+function render(f,r){
+  const lim=r.lim, src=SOURCES[f.source].label;
+  const ingName = src.replace(/ \(.*$/,'');
+  let v;
+  if(r.status==='pass') v='<div class="verdict pass" role="status"><div class="big">✔ Within the CFIA limits</div><p>The amount shown keeps nitrite'+(r.n3>0?' and nitrate':'')+' at or below the limit'+(r.n3>0?'s':'')+' and at least 100 ppm for a "cured" product.</p></div>';
+  else if(r.status==='warn') v='<div class="verdict warn" role="status"><div class="big">⚠ Within the limits, but below the 100 ppm minimum for "cured"</div><p>This amount does not exceed the CFIA limit, but it is too low for the product to be called "cured".</p></div>';
+  else v='<div class="verdict fail" role="status"><div class="big">✖ Does not meet the CFIA requirements</div><p>See the details below.</p></div>';
+
+  const headline = f.mode==='target'
+    ? '<div class="result-main"><div>Amount of curing ingredient to add:</div><div class="num">'+fx(r.ing,2)+' g</div><div class="small">for a target of '+fx(f.target,1)+' ppm '+r.targetAnalyte+' ('+esc(ingName.toLowerCase())+')</div></div>'
+    : '<div class="result-main"><div>Ingoing '+(r.n2>0?'nitrite':'nitrate')+' level:</div><div class="num">'+fmtPpm(r.n2>0?r.ppm2:r.ppm3, r.n2>0?lim.L2:lim.L3)+' ppm</div><div class="small">from '+fx(r.ing,2)+' g of '+esc(ingName.toLowerCase())+'</div></div>';
+
+  const lvl=(ppm,L,on)=> !on?'':'<td class="r">'+fmtPpm(ppm,L)+'</td><td class="r">'+L+'</td><td class="r">'+(ppm>L+EPS?'<span class="no">+'+fx(ppm-L,2)+' over</span>':'<span class="ok">'+fx(L-ppm,1)+' under</span>')+'</td>';
+  let rows='';
+  if(r.n2>0) rows+='<tr><th scope="row">Sodium nitrite</th>'+lvl(r.ppm2,lim.L2,true)+'</tr>';
+  if(r.n3>0) rows+='<tr><th scope="row">Sodium nitrate</th>'+lvl(r.ppm3,lim.L3,true)+'</tr>';
+  const table='<div class="tablewrap"><table><thead><tr><th></th><th class="r">Your level (ppm)</th><th class="r">CFIA limit (ppm)</th><th class="r">Margin (ppm)</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+
+  let gauges=''; 
+  if(r.n2>0) gauges+=gaugeHtml('Nitrite',r.ppm2,(r.n3>0?0:100),lim.L2);
+  if(r.n3>0) gauges+=gaugeHtml('Nitrate',r.ppm3,0,lim.L3);
+
+  const amt=(x)=> x===null?'—':fx(x,2)+' g';
+  const floor2=(x)=>x===null?'—':(Math.floor(x*100)/100).toFixed(2)+' g';
+  let glance='<h3>Amounts at a glance</h3><div class="tablewrap"><table><tbody>'+
+    '<tr><th scope="row">Minimum for a "cured" product (100 ppm total)</th><td class="r">'+amt(r.minCured)+'</td></tr>'+
+    '<tr><th scope="row">'+(f.mode==='target'?'Your target amount':'Your planned amount')+'</th><td class="r"><strong>'+amt(r.ing)+'</strong></td></tr>'+
+    '<tr><th scope="row">Maximum allowed'+(r.maxBy?' (set by '+r.maxBy+')':'')+'</th><td class="r">'+floor2(r.maxAmt)+'</td></tr>'+
+    '<tr><th scope="row">Curing ingredient per 100 kg of '+(r.m.kind==='emulsion'?'batter':'green meat')+'</th><td class="r">'+amt(r.per100)+'</td></tr>'+
+    '</tbody></table></div>';
+  let liquid='';
+  if(r.m.kind==='m1'){
+    const e=r.extra;
+    liquid='<h3>Brine details</h3><div class="tablewrap"><table><tbody>'+
+      '<tr><th scope="row">Total brine weight (with the cure)</th><td class="r">'+fx(e.B,2)+' kg</td></tr>'+
+      (r.n2>0?'<tr><th scope="row">Nitrite in the brine</th><td class="r">'+fx(e.c2,0)+' ppm</td></tr>':'')+
+      (r.n3>0?'<tr><th scope="row">Nitrate in the brine</th><td class="r">'+fx(e.c3,0)+' ppm</td></tr>':'')+
+      '<tr><th scope="row">Maximum '+(f.method==='inject'?'pump':'pick-up')+' with this brine (CFIA basis)</th><td class="r">'+(isFinite(e.maxPct)?fx(e.maxPct,2)+'%':'no limit')+'</td></tr>'+
+      '<tr><th scope="row">Meat this brine batch will treat at '+fx(e.pct,1)+'%</th><td class="r">'+fx(e.B/(e.pct/100),1)+' kg</td></tr>'+
+      '</tbody></table></div>';
+  }
+  const iss=r.issues.map(i=>'<div class="note '+(i.lvl==='bad'?'bad':i.lvl==='warn'?'warn':'info')+'">'+(i.lvl==='bad'?'✖ ':i.lvl==='warn'?'⚠ ':'ℹ ')+esc(i.t)+'</div>').join('');
+
+  let usda='';
+  if(r.usda){
+    const u=r.usda;
+    const st=(p,L)=>p>L+EPS?'<span class="no">over</span>':'<span class="ok">within</span>';
+    usda='<details><summary>Compare with the USDA handbook method (for comparison only)</summary>'+
+      '<p class="small" style="margin-top:6px">USDA rules do not apply in Canada. This shows how the same formulation looks under the USDA handbook\'s weight basis and its limits for '+u.name+'.'+
+      (u.same?' For this method the USDA basis gives the same ppm as the CFIA basis, but the USDA limits are different.':'')+'</p>'+
+      '<div class="tablewrap"><table><thead><tr><th></th><th class="r">USDA-basis level (ppm)</th><th class="r">USDA limit (ppm)</th><th></th></tr></thead><tbody>'+
+      (r.n2>0?'<tr><th scope="row">Sodium nitrite</th><td class="r">'+fx(u.ppm2,1)+'</td><td class="r">'+u.L2+'</td><td>'+st(u.ppm2,u.L2)+'</td></tr>':'')+
+      (r.n3>0?'<tr><th scope="row">Sodium nitrate</th><td class="r">'+fx(u.ppm3,1)+'</td><td class="r">'+u.L3+'</td><td>'+st(u.ppm3,u.L3)+'</td></tr>':'')+
+      '</tbody></table></div>'+
+      (r.m.kind==='m1'?'<p class="small">Maximum pump or pick-up on the USDA basis: '+(isFinite(r.extra.maxPctUsda)?fx(r.extra.maxPctUsda,2)+'%':'no limit')+'. USDA divides by the green weight before injection, while the CFIA example divides by the weight after.</p>':'')+
+      (r.m.kind==='emulsion'?'<p class="small">USDA divides by the green weight of the meat block only, excluding added water, non-meat ingredients and rework that already contains nitrite.</p>':'')+
+      '</details>';
+  } else if(r.m.kind==='emulsion'){
+    usda='<details><summary>Compare with the USDA handbook method (for comparison only)</summary><p class="small" style="margin-top:6px">Enter a meat block weight in Step 3 to see the USDA-basis figure. The USDA handbook divides by the green weight of meat and poultry only (excluding added water, non-meat ingredients and rework that already contains nitrite) and uses a limit of 156 ppm for comminuted products.</p></details>';
+  }
+
+  $('resBody').innerHTML=v+headline+table+gauges+glance+liquid+iss+
+    '<details open><summary>How this was calculated</summary>'+steps(f,r)+'</details>'+usda;
+  $('done').classList.remove('hidden');
+  $('done').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+$('calc').onclick=run;
+function setSource(k,n2,n3){ $('source').value=k; applySource(); if(n2!==undefined) $('n2').value=n2; if(n3!==undefined) $('n3').value=n3; refreshTargetLabel(); }
+function baseReset(){ $('category').value='other'; $('meat').value='red'; $('process').value='rapid'; $('prevPct').value='0'; $('racks').checked=false; $('mode').value='check'; }
+$('exA').onclick=()=>{ baseReset(); method='emulsion'; setSource('na_nitrite'); $('batterW').value='114'; $('mBlock').value=''; $('amount').value='23'; refresh(); run(); };
+$('exB').onclick=()=>{ baseReset(); method='emulsion'; setSource('mix625'); $('batterW').value='114'; $('mBlock').value=''; $('amount').value='350'; refresh(); run(); };
+$('exI').onclick=()=>{ baseReset(); method='inject'; setSource('na_nitrite'); $('meatW').value='100'; $('pump').value='15'; $('bWater').value='134'; $('bSalt').value='40'; $('bOther').value='7.95'; $('amount').value='280'; refresh(); run(); };
+
+fillSources(); setSource('mix625'); refresh();
+</script>
+</body>
+</html>
