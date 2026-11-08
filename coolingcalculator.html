@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meat Cooling Calculator</title>
+<style>
+:root{
+  --bg:#ffffff; --fg:#1b1f23; --muted:#5b6670; --card:#f5f7f9; --line:#d3d9df;
+  --accent:#1c5d99; --accent-fg:#ffffff; --pass:#1b6e3a; --pass-bg:#e6f4ea; --fail:#a4262c; --fail-bg:#fbe9ea;
+  --warn:#7a5200; --warn-bg:#fff4d6; --temp:#d9480f; --mark:#6b4fbb;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181c; --fg:#e8ecef; --muted:#9aa6b0; --card:#1d2329; --line:#35404a;
+    --accent:#6fb0ea; --accent-fg:#0b1218; --pass:#7fd49a; --pass-bg:#16301f; --fail:#ff9a9f; --fail-bg:#3a1a1c;
+    --warn:#f2cb72; --warn-bg:#3a2f12; --temp:#ff8a4c; --mark:#b9a4f5;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:820px;margin:0 auto;padding:14px}
+h1{font-size:1.5rem;margin:.2rem 0 .3rem}
+h2{font-size:1.1rem;margin:0 0 .7rem}
+h3{font-size:1rem;margin:0 0 .4rem}
+p{margin:.3rem 0}
+.sub{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin:14px 0}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+label{display:block;font-weight:600;font-size:.92rem;margin-bottom:3px}
+.hint{font-weight:400;color:var(--muted);font-size:.84rem}
+select,input[type=number],textarea{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9rem;min-height:150px;resize:vertical}
+.chk{display:flex;gap:8px;align-items:flex-start;font-weight:400;font-size:.92rem;margin:6px 0}
+.chk input{margin-top:4px;flex:none}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);padding:9px 18px;font-weight:600}
+button.secondary{background:transparent;color:var(--accent)}
+button.big{width:100%;padding:12px;font-size:1.05rem;margin-top:14px}
+.tabs{display:flex;margin:0 0 12px}
+.tabs button{border-radius:0;background:var(--bg);color:var(--accent);flex:1}
+.tabs button:first-child{border-radius:6px 0 0 6px}
+.tabs button:last-child{border-radius:0 6px 6px 0}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-fg)}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hidden{display:none!important}
+.verdict{border-radius:10px;padding:14px 16px;border:2px solid;margin:12px 0}
+.verdict.pass{background:var(--pass-bg);border-color:var(--pass)}
+.verdict.fail{background:var(--fail-bg);border-color:var(--fail)}
+.verdict.inc{background:var(--warn-bg);border-color:var(--warn)}
+.verdict .big{font-size:1.2rem;font-weight:700}
+.verdict.pass .big{color:var(--pass)} .verdict.fail .big{color:var(--fail)} .verdict.inc .big{color:var(--warn)}
+.warn{background:var(--warn-bg);border:1px solid var(--warn);border-radius:8px;padding:8px 12px;margin:8px 0;font-size:.92rem}
+.errbox{background:var(--fail-bg);border:2px solid var(--fail);border-radius:10px;padding:12px 16px}
+.errbox h2{color:var(--fail);margin-bottom:.3rem}
+.metrics{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:10px 0}
+.metric{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.metric .v{font-size:1.2rem;font-weight:700}
+.metric .l{font-size:.8rem;color:var(--muted)}
+canvas{width:100%;height:340px;display:block;background:var(--bg);border:1px solid var(--line);border-radius:8px}
+.sched{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:10px 0}
+.sched header{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.sched .src{font-size:.82rem;color:var(--muted)}
+.badge{font-weight:700;font-size:.85rem;border-radius:20px;padding:2px 10px;border:1.5px solid;white-space:nowrap}
+.b-pass{color:var(--pass);border-color:var(--pass)} .b-fail{color:var(--fail);border-color:var(--fail)}
+.b-inc{color:var(--warn);border-color:var(--warn)} .b-na{color:var(--muted);border-color:var(--line)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;margin-top:6px}
+th,td{padding:4px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.tablewrap{overflow:auto}
+details{margin-top:10px} summary{cursor:pointer;font-weight:600}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;margin:6px 0}
+.sw{display:inline-block;width:22px;border-top:3px solid;vertical-align:middle;margin-right:5px}
+.small{font-size:.85rem;color:var(--muted)}
+.ok{color:var(--pass);font-weight:700} .no{color:var(--fail);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Meat Cooling Calculator</h1>
+<p class="sub">Check whether the cooling of a heat-processed meat product meets the CFIA cooling schedules, see how fast it cooled, and get your data ready for a <em>Clostridium perfringens</em> growth prediction if it did not.</p>
+
+<section class="card" aria-labelledby="s1">
+  <h2 id="s1">Step 1: Describe the Product and Cooling Process</h2>
+  <div class="grid">
+    <div><label for="aw">Water activity (aw) <span class="hint">at the start of cooling</span></label><input type="number" id="aw" step="0.001" min="0" max="1" value="0.97"></div>
+    <div><label for="nitrite">Ingoing sodium nitrite (ppm) <span class="hint">0 if uncured</span></label><input type="number" id="nitrite" step="any" min="0" value="0"></div>
+    <div><label for="salt">Salt in formulation (%)</label><input type="number" id="salt" step="any" min="0" value="1.8"></div>
+    <div><label for="moisture">Moisture in end product (%)</label><input type="number" id="moisture" step="any" min="0" max="100" value="70"></div>
+  </div>
+  <p class="small" id="brineNote" style="margin-top:6px"></p>
+
+  <div style="margin-top:8px">
+    <label class="chk"><input type="checkbox" id="intact"><span>The product is a piece of <strong>intact muscle</strong> (not tenderized), such as roast beef, turkey breast or pork loin.</span></label>
+    <label class="chk"><input type="checkbox" id="usdaConds"><span>For the US FSIS slow-cooling option: the product has no reducing agents (e.g. erythorbate, ascorbate) that weaken the nitrite, and was <strong>not</strong> held in a largely oxygen-free state (e.g. vacuum packed) before cooking, <em>or</em> other inhibitors make up for it.</span></label>
+    <label class="chk"><input type="checkbox" id="interrupted"><span>Cooling was <strong>interrupted</strong> (held cold for a period, then cooling resumed).</span></label>
+  </div>
+  <div id="holdBox" class="hidden" style="max-width:260px;margin-top:6px">
+    <label for="holdH">Length of the interruption (hours)</label>
+    <input type="number" id="holdH" step="0.25" min="0" value="4">
+  </div>
+</section>
+
+<section class="card" aria-labelledby="s2">
+  <h2 id="s2">Step 2: Input Your Time-Temperature Data</h2>
+  <p class="small" style="margin-bottom:8px">Use the temperature of the <strong>warmest part</strong> of the product (the maximum internal temperature), starting when cooling begins. Any readings before the hottest point are ignored.</p>
+  <div class="grid">
+    <div>
+      <label for="interval">Data logger time interval</label>
+      <div style="display:flex;gap:6px">
+        <input type="number" id="interval" min="0" step="any" value="10" style="flex:2">
+        <select id="intervalUnit" style="flex:1.2"><option value="min">minutes</option><option value="sec">seconds</option></select>
+      </div>
+    </div>
+    <div>
+      <label for="offset">Temperature error to add (°C) <span class="hint">see notes</span></label>
+      <input type="number" id="offset" min="0" step="0.1" value="1.0">
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="How to enter data" style="margin-top:14px">
+    <button type="button" role="tab" id="tabPaste" aria-selected="true" aria-controls="paneP">Paste from Excel/CSV</button>
+    <button type="button" role="tab" id="tabManual" aria-selected="false" aria-controls="paneM">Enter Manually</button>
+  </div>
+  <div id="paneP" role="tabpanel" aria-labelledby="tabPaste">
+    <label for="pasteData">Paste your column of temperature data below. <em>Only include temperatures (in °C)</em>, one per line.</label>
+    <p class="hint" style="margin:0 0 4px">Omit time, headers, or any other text. (Header rows are skipped automatically.)</p>
+    <textarea id="pasteData" spellcheck="false" placeholder="70.0&#10;66.6&#10;63.4&#10;…"></textarea>
+  </div>
+  <div id="paneM" role="tabpanel" aria-labelledby="tabManual" class="hidden">
+    <label for="manualData">Enter temperatures (°C) separated by commas.</label>
+    <textarea id="manualData" spellcheck="false" placeholder="70.0, 66.6, 63.4, 60.3, …"></textarea>
+  </div>
+
+  <button type="button" class="big" id="calc">Evaluate Cooling</button>
+  <div class="row">
+    <button type="button" class="secondary" id="exRapid">Example: rapid cooling</button>
+    <button type="button" class="secondary" id="exSlow">Example: slow cooling (cured)</button>
+    <button type="button" class="secondary" id="exFail">Example: too slow</button>
+    <button type="button" class="secondary" id="clear">Clear</button>
+  </div>
+</section>
+
+<section id="done" class="card hidden" aria-live="polite" aria-labelledby="s3">
+  <h2 id="s3">Cooling Evaluation Complete</h2>
+  <div id="resBody"></div>
+</section>
+
+<section id="error" class="errbox hidden" role="alert">
+  <h2>Error</h2>
+  <p id="errMsg"></p>
+</section>
+
+<section class="card">
+  <h2>Notes and limitations</h2>
+  <ul class="small">
+    <li><strong>Source of the rules.</strong> The schedules come from the CFIA page <em>Preventive control recommendations for cooling heat processed meat products</em> (page dated 2018-06-13). It also cites US FSIS Appendix B (1999) cooling parameters, which are included as separate options. Check the current CFIA page, since it may change.</li>
+    <li><strong>What "cooling started" means.</strong> This tool treats the hottest reading as the start of cooling. Zone times are measured between the first times the temperature falls to each limit, with straight-line interpolation between readings. If your data begins below an upper limit, the zone is assumed to start at the first reading.</li>
+    <li><strong>Measurement error.</strong> CFIA expects limits to be adjusted by the equipment's stated error and recommends equipment accurate to ±1.0 °C. Because a warm product is the worse case in cooling, the error you enter is <em>added</em> to every reading.</li>
+    <li><strong>What this tool cannot check.</strong> Surface temperature records, protection from post-cooking contamination, when chilling began after the cook, and the product conditions you tick in Step 1 are on your honour. A real plant must confirm them.</li>
+    <li><strong>It does not predict bacterial growth.</strong> CFIA says a cooling deviation should be assessed with predictive modelling using worst-case inputs, and the product may only be considered for release if the model predicts no more than a 1-log CFU/g increase of <em>C. perfringens</em> and no growth of <em>C. botulinum</em>. End-product testing is also expected, but a negative test alone is not a basis for release.</li>
+    <li><strong>Not a validation.</strong> This is a learning tool. Real cooling schedules must be validated and approved by a qualified Process Authority.</li>
+  </ul>
+</section>
+
+</div>
+
+<script>
+// ===== CORE START =====
+const EPS = 1e-9;
+
+// ---- parsing the pasted temperatures (one column of °C values) ----
+function parseTemps(text, mode){
+  const temps=[]; let skipped=0;
+  if(mode==='paste'){
+    for(const raw of text.split(/\r?\n/)){
+      const line=raw.trim(); if(!line) continue;
+      const toks=line.split(/[\t;,]+/).map(x=>x.trim()).filter(Boolean);
+      const nums=toks.filter(x=>/^-?\d+(\.\d+)?$/.test(x));
+      if(nums.length>1) return {error:'More than one column of numbers was found on a line. Paste only the temperature column (no time column).'};
+      if(nums.length===1) temps.push(parseFloat(nums[0])); else skipped++;
+    }
+  } else {
+    for(const tok of text.split(/[\s,;]+/).filter(Boolean)){
+      if(/^-?\d+(\.\d+)?$/.test(tok)) temps.push(parseFloat(tok)); else skipped++;
+    }
+  }
+  return {temps, skipped};
+}
+
+// ---- geometry of the cooling curve (rows: [{t minutes, T °C}]) ----
+function peakInfo(rows){
+  let mx=-Infinity, idx=0;
+  rows.forEach((r,i)=>{ if(r.T>=mx){mx=r.T; idx=i;} }); // last occurrence of the maximum
+  return {idx, T:mx, t:rows[idx].t};
+}
+function tempAt(rows,t){
+  if(t<=rows[0].t) return rows[0].T;
+  for(let i=0;i<rows.length-1;i++){
+    if(t<=rows[i+1].t){
+      const a=rows[i], b=rows[i+1];
+      if(b.t===a.t) return b.T;
+      return a.T+(b.T-a.T)*(t-a.t)/(b.t-a.t);
+    }
+  }
+  return rows[rows.length-1].T;
+}
+// First time at or after tFrom that the temperature is at or below thr (null if never).
+function downCross(rows, thr, tFrom){
+  for(let i=0;i<rows.length-1;i++){
+    const a=rows[i], b=rows[i+1];
+    if(b.t<tFrom) continue;
+    const ta=Math.max(a.t,tFrom), Ta=(a.t>=tFrom)?a.T:tempAt(rows,tFrom);
+    if(Ta<=thr+EPS) return ta;
+    if(b.T<=thr+EPS){
+      if(b.t===ta) return ta;
+      return ta+(Ta-thr)/(Ta-b.T)*(b.t-ta);
+    }
+  }
+  return null;
+}
+
+// ---- brine concentration (CFIA formula) ----
+function brinePct(salt, moisture){ return salt/(salt+moisture)*100; }
+function slowEligibility(f){
+  const brine=brinePct(f.salt,f.moisture);
+  const opts=[
+    {ok:f.aw>0.92 && f.nitrite>=120 && brine>=3.5, text:'aw above 0.92, nitrite at least 120 ppm, brine at least 3.5%'},
+    {ok:f.aw>0.92 && f.nitrite>=40  && brine>=6,   text:'aw above 0.92, nitrite at least 40 ppm, brine at least 6%'},
+    {ok:f.aw<=0.92,                                text:'aw at or below 0.92 at the start of cooling (with or without nitrite)'},
+    {ok:f.aw>0.92 && f.nitrite>=180 && brine>=2.3, text:'aw above 0.92, nitrite at least 180 ppm, brine at least 2.3%'}
+  ];
+  return {brine, opts, eligible:opts.some(o=>o.ok)};
+}
+
+// ---- evaluate all CFIA cooling schedules ----
+function evaluateCooling(rows, f){
+  const peak=peakInfo(rows), tEnd=rows[rows.length-1].t;
+  const DZ=(hi,lo)=>{
+    const s=downCross(rows,hi,peak.t), e=downCross(rows,lo,peak.t);
+    return {hi,lo,s,e, min:(s!==null&&e!==null)?e-s:null, elapsed:s!==null?tEnd-s:null, assumed:peak.T<=hi+EPS};
+  };
+  const FROMSTART=(lo)=>{ const e=downCross(rows,lo,peak.t); return {hi:null,lo,s:peak.t,e,min:e!==null?e-peak.t:null,elapsed:tEnd-peak.t,assumed:false}; };
+  const chk=(label,sp,limitMin,note)=>{
+    let status;
+    if(sp.s===null) status='incomplete';
+    else if(sp.e!==null) status=(sp.min<=limitMin+EPS)?'pass':'fail';
+    else status=(sp.elapsed>limitMin+EPS)?'fail':'incomplete';
+    return {label, limit:limitMin, actual:sp.min, elapsed:sp.e===null?sp.elapsed:null, status, assumed:sp.assumed, note};
+  };
+  const manual=(label,text)=>({label, manual:true, text, status:'manual'});
+
+  // continuous drop check (readings after the peak should not climb back up by more than 1 °C)
+  let runMin=Infinity, maxRise=0;
+  for(let i=peak.idx;i<rows.length;i++){ runMin=Math.min(runMin,rows[i].T); maxRise=Math.max(maxRise, rows[i].T-runMin); }
+  const RISE_TOL=1.0;
+  const continuous = maxRise<=RISE_TOL+EPS;
+
+  const schedules=[];
+
+  // 1. CFIA slow cooling
+  const el=slowEligibility(f);
+  schedules.push({
+    id:'slow', name:'Slow cooling', src:'CFIA', applicable:el.eligible,
+    naReason:'The formulation does not meet any of the four CFIA conditions for slow cooling (brine concentration is '+el.brine.toFixed(2)+'%).',
+    eligibleText:el.opts.filter(o=>o.ok).map(o=>o.text),
+    checks:[
+      chk('Time between 49 °C and 4 °C',DZ(49,4),20*60),
+      {label:'Continuous drop in temperature', status: continuous?'pass':'fail', text: continuous?'No rise in temperature after the peak (more than 1 °C).':'Temperature rose by '+maxRise.toFixed(1)+' °C at some point after the peak. Slow cooling then also needs a surface temperature record showing no more than 2 h between 49 °C and 20 °C, which this tool cannot check.'}
+    ]
+  });
+
+  // 2. US FSIS Appendix B slow cooling
+  const usdaSlowOk = f.nitrite>=100 && f.usdaConds;
+  schedules.push({
+    id:'usdaSlow', name:'Slow cooling (US FSIS Appendix B)', src:'US FSIS, cited by CFIA', applicable:usdaSlowOk,
+    naReason: f.nitrite<100 ? 'Requires at least 100 ppm ingoing sodium nitrite.' : 'The product conditions in Step 1 were not confirmed.',
+    checks:[
+      chk('Time from 54.4 °C to 26.6 °C (130 °F to 80 °F)',DZ(54.4,26.6),5*60),
+      chk('Time from 26.6 °C to 7.2 °C (80 °F to 45 °F)',DZ(26.6,7.2),10*60)
+    ]
+  });
+
+  // 3. CFIA rapid cooling
+  schedules.push({
+    id:'rapid', name:'Rapid cooling', src:'CFIA', applicable:true,
+    checks:[
+      chk('Time between 54 °C and 27 °C',DZ(54,27),2*60),
+      chk('Time between 54 °C and 4 °C',DZ(54,4),7*60)
+    ]
+  });
+
+  // 4. CFIA rapid cooling, intact muscle option
+  schedules.push({
+    id:'intact', name:'Rapid cooling, intact muscle option', src:'CFIA', applicable:!!f.intact,
+    naReason:'Only for a piece of intact (not tenderized) muscle. Tick the box in Step 1 if that applies.',
+    checks:[
+      chk('Time from start of cooling to 4 °C',FROMSTART(4),7.5*60),
+      chk('Time between 50 °C and 20 °C',DZ(50,20),2*60)
+    ]
+  });
+
+  // 5. US FSIS rapid cooling, option 1
+  schedules.push({
+    id:'usdaR1', name:'Rapid cooling, option 1 (US FSIS Appendix B)', src:'US FSIS, cited by CFIA', applicable:true,
+    checks:[
+      chk('Time from 54.4 °C to 26.6 °C (130 °F to 80 °F)',DZ(54.4,26.6),90),
+      chk('Time from 26.6 °C to 4.4 °C (80 °F to 40 °F)',DZ(26.6,4.4),5*60),
+      chk('Time from 48.8 °C to 26.6 °C (120 °F to 80 °F)',DZ(48.8,26.6),60,'CFIA states this limit applies to both US FSIS rapid cooling options.')
+    ]
+  });
+
+  // 6. US FSIS rapid cooling, option 2
+  schedules.push({
+    id:'usdaR2', name:'Rapid cooling, option 2 (US FSIS Appendix B)', src:'US FSIS, cited by CFIA', applicable:true,
+    checks:[
+      chk('Time from 48.8 °C to 12.7 °C (120 °F to 55 °F)',DZ(48.8,12.7),6*60),
+      chk('Time from 48.8 °C to 26.6 °C (120 °F to 80 °F)',DZ(48.8,26.6),60,'CFIA states this limit applies to both US FSIS rapid cooling options.'),
+      {label:'Chilling continues to 4.4 °C (40 °F)', status: downCross(rows,4.4,peak.t)!==null?'pass':'incomplete', text: downCross(rows,4.4,peak.t)!==null?'Reached 4.4 °C.':'The data end before the product reaches 4.4 °C.'},
+      manual('Chilling began within 90 minutes after the cook cycle ended','Cannot be checked from the data. Confirm it separately.')
+    ]
+  });
+
+  // 7. CFIA interrupted cooling
+  const holdMin=(isFinite(f.holdH)?f.holdH:0)*60;
+  const intChecks=[];
+  if(f.interrupted){
+    intChecks.push(chk('Time between 54 °C and 18 °C',DZ(54,18),120));
+    const t18=downCross(rows,18,peak.t);
+    if(holdMin>240+EPS){
+      intChecks.push({label:'Length of interruption', status:'fail', text:'The interruption is '+(holdMin/60).toFixed(2)+' h. CFIA allows up to 4 h.'});
+    } else {
+      intChecks.push({label:'Length of interruption', status:'pass', text:(holdMin/60).toFixed(2)+' h (limit 4 h).'});
+    }
+    if(t18===null){
+      intChecks.push({label:'Product stays below 18 °C during the interruption', status:'incomplete', text:'The product never reached 18 °C in the data.'});
+      intChecks.push({label:'Time to reach 4 °C after the interruption ends', status:'incomplete', text:'Not yet reached 18 °C.'});
+    } else {
+      const holdEnd=t18+holdMin;
+      if(tEnd<holdEnd-EPS){
+        intChecks.push({label:'Product stays below 18 °C during the interruption', status:'incomplete', text:'The data end before the interruption ends.'});
+        intChecks.push({label:'Time to reach 4 °C after the interruption ends', status:'incomplete', text:'Not yet reached.'});
+      } else {
+        let mx=tempAt(rows,holdEnd);
+        rows.forEach(r=>{ if(r.t>t18+EPS && r.t<holdEnd-EPS) mx=Math.max(mx,r.T); });
+        intChecks.push({label:'Product stays below 18 °C during the interruption', status: mx<=18+EPS?'pass':'fail', text:'Highest temperature during the interruption: '+mx.toFixed(1)+' °C (limit 18 °C).'});
+        const e=downCross(rows,4,holdEnd);
+        const sp={s:holdEnd,e,min:e!==null?e-holdEnd:null,elapsed:tEnd-holdEnd,assumed:false};
+        intChecks.push(chk('Time to reach 4 °C after the interruption ends',sp,120));
+      }
+    }
+    intChecks.push(manual('Product protected from contamination during the interruption (covered, wrapped, etc.)','Cannot be checked from the data. Confirm it separately.'));
+  }
+  schedules.push({id:'interrupted', name:'Interrupted cooling', src:'CFIA', applicable:!!f.interrupted,
+    naReason:'Tick "Cooling was interrupted" in Step 1 if that applies.', checks:intChecks});
+
+  // status per schedule
+  schedules.forEach(s=>{
+    if(!s.applicable){ s.status='na'; return; }
+    const st=s.checks.filter(c=>c.status!=='manual').map(c=>c.status);
+    s.status = st.includes('fail')?'fail' : st.includes('incomplete')?'incomplete' : 'pass';
+  });
+  const app=schedules.filter(s=>s.status!=='na');
+  const met=app.filter(s=>s.status==='pass');
+  let overall;
+  if(met.length) overall='pass';
+  else if(app.some(s=>s.status==='incomplete')) overall='incomplete';
+  else overall='fail';
+
+  // summary numbers
+  const s54=DZ(54,27), s27=DZ(27,4), s54_4=DZ(54,4);
+  const rate=(hi,lo,sp)=> sp.min!==null && sp.min>0 ? (hi-lo)/(sp.min/60) : null;
+  return {rows, peak, tEnd, schedules, met, overall, maxRise, continuous,
+    summary:{ t54to27:s54.min, t27to4:s27.min, t54to4:s54_4.min,
+      rate54to27: rate(54,27,s54), rate27to4: rate(27,4,s27), rate54to4: rate(54,4,s54_4),
+      t54: downCross(rows,54,peak.t), minT: Math.min(...rows.slice(peak.idx).map(r=>r.T)) }};
+}
+
+// ---- prepare the cooling profile for the ComBase Perfringens Predictor ----
+function combaseProfile(rows){
+  const peak=peakInfo(rows);
+  let seg=rows.slice(peak.idx).map(r=>({h:(r.t-peak.t)/60, T:r.T}));
+  let resampled=false;
+  if(seg.length>500){
+    const total=seg[seg.length-1].h, out=[];
+    const segRows=seg.map(p=>({t:p.h,T:p.T}));
+    for(let i=0;i<500;i++){ const h=total*i/499; out.push({h, T:tempAt(segRows,h)}); }
+    seg=out; resampled=true;
+  }
+  let maxStep=-Infinity, badSteps=0;
+  for(let i=1;i<seg.length;i++){ const d=seg[i].T-seg[i-1].T; maxStep=Math.max(maxStep,d); if(d>5.6+EPS) badSteps++; }
+  const minT=Math.min(...seg.map(p=>p.T)), maxT=Math.max(...seg.map(p=>p.T));
+  const checks=[
+    {ok:seg.length>=5, text:'At least 5 data points ('+seg.length+' from the hottest reading onward).'},
+    {ok:seg.length<=500, text:'No more than 500 points'+(resampled?' (your data were evenly resampled to 500 points).':'.')},
+    {ok:minT>=0 && maxT<=95, text:'Temperatures between 0 °C and 95 °C (range here: '+minT.toFixed(1)+' to '+maxT.toFixed(1)+' °C).'},
+    {ok:badSteps===0, text:'No reading more than 5.6 °C higher than the one before'+(badSteps?' ('+badSteps+' reading(s) rise too much).':'.')},
+    {ok:minT<=15, text:'Cooled to at least 15 °C (lowest reading: '+minT.toFixed(1)+' °C).'}
+  ];
+  const warn = maxT<70 ? 'ComBase says the predictor is intended for meat heat-treated at 70 to 95 °C. The hottest reading here is '+maxT.toFixed(1)+' °C.' : (maxT>95 ? '' : null);
+  const text=seg.map(p=>p.h.toFixed(4)+'\t'+p.T.toFixed(2)).join('\n');
+  return {seg, checks, allOk:checks.every(c=>c.ok), warn, text, resampled};
+}
+
+function fmtDur(min){
+  if(min===null||min===undefined||!isFinite(min)) return '—';
+  let h=Math.floor(min/60), m=Math.round(min-h*60);
+  if(m===60){h+=1;m=0;}
+  return h>0 ? h+' h '+String(m).padStart(2,'0')+' min' : m+' min';
+}
+// ---- built-in examples: exponential cooling from 70 °C toward 0 °C, one reading per 10 min ----
+function makeExample(kind){
+  const k = kind==='rapid'?0.5 : kind==='slow'?0.16 : 0.2;
+  const hours = kind==='rapid'?8 : kind==='slow'?20 : 15;
+  const out=[];
+  for(let i=0;i<=hours*6;i++){ out.push((70*Math.exp(-k*i/6)).toFixed(1)); }
+  return out;
+}
+// ===== CORE END =====
+
+// ---- UI ----
+const $=id=>document.getElementById(id);
+let inputMode='paste';
+function setTabs(ids, selected){ ids.forEach(id=>$(id).setAttribute('aria-selected', id===selected)); }
+function num(id,def){ const v=parseFloat($(id).value); return isFinite(v)?v:def; }
+function refreshForm(){
+  $('paneP').classList.toggle('hidden', inputMode!=='paste');
+  $('paneM').classList.toggle('hidden', inputMode!=='manual');
+  setTabs(['tabPaste','tabManual'], inputMode==='paste'?'tabPaste':'tabManual');
+  $('holdBox').classList.toggle('hidden', !$('interrupted').checked);
+  const s=num('salt',NaN), m=num('moisture',NaN);
+  $('brineNote').textContent = (isFinite(s)&&isFinite(m)&&s+m>0) ? 'Brine concentration in the finished product = salt ÷ (salt + moisture) × 100 = '+brinePct(s,m).toFixed(2)+'%.' : '';
+}
+$('tabPaste').onclick=()=>{inputMode='paste';refreshForm();};
+$('tabManual').onclick=()=>{inputMode='manual';refreshForm();};
+['salt','moisture'].forEach(id=>$(id).addEventListener('input',refreshForm));
+$('interrupted').addEventListener('change',refreshForm);
+$('clear').onclick=()=>{$('pasteData').value='';$('manualData').value='';$('done').classList.add('hidden');$('error').classList.add('hidden');};
+function loadExample(kind){
+  inputMode='paste'; $('interval').value='10'; $('intervalUnit').value='min'; $('offset').value='1.0';
+  $('interrupted').checked=false; $('intact').checked=(kind==='rapid');
+  if(kind==='slow'){ $('aw').value='0.97'; $('nitrite').value='120'; $('salt').value='2.8'; $('moisture').value='72'; $('usdaConds').checked=true; }
+  else { $('aw').value='0.97'; $('nitrite').value='0'; $('salt').value='1.8'; $('moisture').value='70'; $('usdaConds').checked=false; }
+  $('pasteData').value=makeExample(kind).join('\n'); refreshForm(); run();
+}
+$('exRapid').onclick=()=>loadExample('rapid');
+$('exSlow').onclick=()=>loadExample('slow');
+$('exFail').onclick=()=>loadExample('fail');
+$('calc').onclick=run;
+
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function showError(msg){ $('done').classList.add('hidden'); $('errMsg').textContent=msg; $('error').classList.remove('hidden'); $('error').scrollIntoView({behavior:'smooth',block:'nearest'}); }
+
+function run(){
+  $('error').classList.add('hidden');
+  const iv=parseFloat($('interval').value);
+  if(!(iv>0)) return showError('Enter the data logger time interval as a number greater than 0.');
+  const intervalMin = $('intervalUnit').value==='sec' ? iv/60 : iv;
+  const off=parseFloat($('offset').value), offsetC=(isFinite(off)&&off>=0)?off:0;
+  const f={ aw:num('aw',NaN), nitrite:num('nitrite',0), salt:num('salt',NaN), moisture:num('moisture',NaN),
+            intact:$('intact').checked, usdaConds:$('usdaConds').checked, interrupted:$('interrupted').checked, holdH:num('holdH',0) };
+  if(!isFinite(f.aw)||f.aw<0||f.aw>1) return showError('Enter a water activity between 0 and 1.');
+  if(!isFinite(f.salt)||!isFinite(f.moisture)||f.salt<0||f.moisture<0||f.salt+f.moisture<=0) return showError('Enter the salt and moisture percentages as numbers (0 or more).');
+  const parsed=parseTemps(inputMode==='paste'?$('pasteData').value:$('manualData').value, inputMode);
+  if(parsed.error) return showError(parsed.error);
+  if(parsed.temps.length<3) return showError('At least three temperature readings are needed. Check that you pasted the temperature column, in °C.');
+  const rows=parsed.temps.map((T,i)=>({t:i*intervalMin, raw:T, T:T+offsetC}));
+  const res=evaluateCooling(rows,f);
+  res.skipped=parsed.skipped; res.intervalMin=intervalMin; res.f=f; res.offsetC=offsetC;
+  render(res);
+}
+
+const BADGE={pass:['b-pass','✔ Meets'],fail:['b-fail','✖ Does not meet'],incomplete:['b-inc','… Incomplete'],na:['b-na','Not applicable']};
+const MARK={pass:'<span class="ok">✔</span>',fail:'<span class="no">✖</span>',incomplete:'<span>…</span>',manual:'<span>?</span>'};
+
+function checkRow(c){
+  if(c.manual||c.text!==undefined){
+    return '<tr><td>'+esc(c.label)+'</td><td>'+esc(c.text||'')+'</td><td>'+MARK[c.status]+'</td></tr>';
+  }
+  const meas = c.actual!==null ? fmtDur(c.actual) : (c.elapsed!==null? 'not reached yet ('+fmtDur(c.elapsed)+' so far)' : 'not reached');
+  const extra=(c.assumed?' <span class="small">(zone assumed to start at the first reading)</span>':'')+(c.note?'<div class="small">'+esc(c.note)+'</div>':'');
+  return '<tr><td>'+esc(c.label)+extra+'</td><td>'+meas+' <span class="small">(limit '+fmtDur(c.limit)+')</span></td><td>'+MARK[c.status]+'</td></tr>';
+}
+function schedHtml(s){
+  const b=BADGE[s.status];
+  let body='';
+  if(s.status==='na') body='<p class="small">'+esc(s.naReason)+'</p>';
+  else {
+    if(s.eligibleText&&s.eligibleText.length) body+='<p class="small">Formulation condition met: '+esc(s.eligibleText[0])+'.</p>';
+    body+='<div class="tablewrap"><table><thead><tr><th>Requirement</th><th>Your data</th><th></th></tr></thead><tbody>'+s.checks.map(checkRow).join('')+'</tbody></table></div>';
+  }
+  return '<div class="sched"><header><div><h3>'+esc(s.name)+'</h3><div class="src">'+esc(s.src)+'</div></div><span class="badge '+b[0]+'">'+b[1]+'</span></header>'+body+'</div>';
+}
+
+function render(res){
+  const S=res.summary, f=res.f;
+  const warns=[];
+  if(res.skipped>0) warns.push(res.skipped+' entry(ies) were not numbers and were skipped (header rows are normal).');
+  if(res.peak.idx>0) warns.push('The hottest reading is at '+fmtDur(res.peak.t)+' into the data. Readings before that were ignored and cooling is measured from there.');
+  if(res.peak.T<54) warns.push('The hottest reading ('+res.peak.T.toFixed(1)+' °C after error adjustment) is already below 54 °C, so zone timing starts at the first reading and may understate the true time.');
+  if(!res.continuous) warns.push('The temperature climbed back up by '+res.maxRise.toFixed(1)+' °C at some point during cooling. Check for probe movement or reheating.');
+  if(res.intervalMin>15) warns.push('Readings are '+fmtDur(res.intervalMin)+' apart. Long gaps make the crossing times less precise.');
+
+  let v, nm=res.met.map(s=>s.name+' ('+s.src+')');
+  if(res.overall==='pass'){
+    v='<div class="verdict pass" role="status"><div class="big">✔ Cooling schedule met. Disposition: ACCEPT</div><p>This batch meets: '+esc(nm.join('; '))+'. CFIA recommends that the operator has a valid cooling schedule for each product type and checks that every lot meets it.</p></div>';
+  } else if(res.overall==='incomplete'){
+    v='<div class="verdict inc" role="status"><div class="big">… Cooling not finished in the data. Disposition: HOLD</div><p>No schedule has failed yet, but the data end before the product is cool enough to show that one has been met. Keep logging until the product reaches 4 °C.</p></div>';
+  } else {
+    v='<div class="verdict fail" role="status"><div class="big">✖ No cooling schedule met. Disposition: HOLD (cooling deviation)</div><p>CFIA says that to consider releasing product after a cooling deviation, the operator should run a predictive model with worst-case inputs. The product may be considered for release only if the model predicts no more than a 1-log CFU/g increase of <em>C. perfringens</em> and no <em>C. botulinum</em> growth. End-product testing should also be done, but a negative result alone is not a reason to release. See the ComBase section below.</p></div>';
+  }
+  const m=(val,lab)=>'<div class="metric"><div class="v">'+val+'</div><div class="l">'+lab+'</div></div>';
+  const rt=x=>x===null?'—':x.toFixed(1)+' °C/h';
+  const metrics='<div class="metrics">'+
+    m(res.peak.T.toFixed(1)+' °C','Hottest reading (error-adjusted)')+
+    m(fmtDur(S.t54to27),'54 °C to 27 °C')+
+    m(fmtDur(S.t27to4),'27 °C to 4 °C')+
+    m(fmtDur(S.t54to4),'54 °C to 4 °C')+
+    m(rt(S.rate54to27),'Average cooling rate, 54 to 27 °C')+
+    m(rt(S.rate27to4),'Average cooling rate, 27 to 4 °C')+
+    m(fmtDur(res.tEnd),'Logged duration')+
+    m(res.rows.length,'Data points')+'</div>';
+  const w=warns.map(x=>'<div class="warn">⚠ '+esc(x)+'</div>').join('');
+
+  const active=res.schedules.filter(s=>s.status!=='na'), inactive=res.schedules.filter(s=>s.status==='na');
+  let sch='<h2 style="margin-top:14px">Cooling schedules checked</h2>'+active.map(schedHtml).join('');
+  if(inactive.length) sch+='<details><summary>Schedules that do not apply ('+inactive.length+')</summary>'+inactive.map(schedHtml).join('')+'</details>';
+
+  const legend='<div class="legend"><span><span class="sw" style="border-color:var(--temp)"></span>Core temperature, error-adjusted (°C)</span>'+
+    '<span><span class="sw" style="border-color:var(--mark);border-top-style:dashed"></span>Rapid cooling deadlines (2 h and 7 h after reaching 54 °C)</span></div>';
+
+  // ComBase section
+  const cb=combaseProfile(res.rows);
+  const cbChecks=cb.checks.map(c=>'<li>'+(c.ok?'<span class="ok">✔</span> ':'<span class="no">✖</span> ')+esc(c.text)+'</li>').join('');
+  const cbHtml='<details '+(res.overall==='fail'?'open':'')+'><summary>Prepare data for the ComBase Perfringens Predictor (for cooling deviations)</summary>'+
+    '<p class="small" style="margin-top:6px">The <a href="https://combase.ars.usda.gov/Perfringens_Predictor.aspx" target="_blank" rel="noopener">ComBase Perfringens Predictor</a> estimates how much <em>C. perfringens</em> grows during cooling. This tool does not run that model. It prepares your profile in the format the predictor expects (time in hours starting at 0, temperature in °C). Paste it into the predictor, then enter pH, salt (NaCl %) and cured or uncured.</p>'+
+    '<ul class="small" style="padding-left:20px">'+cbChecks+'</ul>'+
+    (cb.warn?'<div class="warn">⚠ '+esc(cb.warn)+'</div>':'')+
+    '<p class="small"><strong>For a CFIA deviation assessment</strong>, enter worst-case values: the lowest plausible salt, pH and nitrite for the product. The predictor\'s <em>cured</em> option should only be used when ingoing sodium nitrite is at least 100 ppm and residual nitrite is at least 10 ppm. Valid ranges are pH 5.2 to 8.0 and salt 0 to 4%. The predictor shows the growth against a 1-log line, which is the CFIA limit.</p>'+
+    '<label for="cbText" class="small" style="margin-top:6px">Profile (hours, °C), tab-separated, error-adjusted temperatures:</label>'+
+    '<textarea id="cbText" readonly style="min-height:120px">'+esc(cb.text)+'</textarea>'+
+    '<div class="row"><button type="button" class="secondary" id="cbCopy">Copy profile</button><span id="cbMsg" class="small" style="align-self:center"></span></div></details>';
+
+  $('resBody').innerHTML=v+metrics+w+sch+
+    '<h2 style="margin-top:14px">Cooling curve</h2>'+legend+'<canvas id="chart" role="img" aria-label="Line chart of product core temperature against time with the cooling limits marked"></canvas>'+cbHtml;
+  $('done').classList.remove('hidden');
+  window._lastRes=res; drawChart(res);
+  $('cbCopy').onclick=()=>{
+    const ta=$('cbText'); ta.select();
+    let ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+    $('cbMsg').textContent = ok ? 'Copied.' : 'Select the text above and copy it (Ctrl+C or Cmd+C).';
+  };
+  $('done').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function drawChart(res){
+  const cv=$('chart'); if(!cv) return; const dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth, H=cv.clientHeight; cv.width=W*dpr; cv.height=H*dpr;
+  const g=cv.getContext('2d'); g.scale(dpr,dpr);
+  const fg=cssv('--fg')||'#222', muted=cssv('--muted')||'#666', line=cssv('--line')||'#ccc';
+  const cT=cssv('--temp')||'#d9480f', cM=cssv('--mark')||'#6b4fbb';
+  const L=46,R=16,Tp=14,B=38, pw=W-L-R, ph=H-Tp-B;
+  const rows=res.rows, tMaxH=Math.max(res.tEnd/60,0.01);
+  const temps=rows.map(r=>r.T);
+  const y1=Math.ceil(Math.max(...temps)/10)*10, y0=Math.min(0,Math.floor(Math.min(...temps)/10)*10);
+  const X=h=>L+h/tMaxH*pw, Y=T=>Tp+ph-(T-y0)/(y1-y0)*ph;
+  g.clearRect(0,0,W,H); g.font='12px system-ui,sans-serif'; g.lineWidth=1;
+  g.strokeStyle=line; g.fillStyle=muted; g.textAlign='right';
+  for(let T=y0;T<=y1;T+=10){ const y=Y(T); g.beginPath(); g.moveTo(L,y); g.lineTo(L+pw,y); g.stroke(); g.fillText(T,L-6,y+4); }
+  g.textAlign='center';
+  const step=tMaxH>16?4:tMaxH>8?2:tMaxH>4?1:0.5;
+  for(let h=0;h<=tMaxH+1e-9;h+=step){ g.fillText(String(Math.round(h*100)/100),X(h),Tp+ph+16); }
+  g.fillStyle=fg; g.fillText('Time (hours)',L+pw/2,H-6);
+  g.save(); g.translate(12,Tp+ph/2); g.rotate(-Math.PI/2); g.fillText('Core temperature (°C)',0,0); g.restore();
+  // reference temperature lines
+  g.setLineDash([3,4]); g.strokeStyle=muted; g.fillStyle=muted; g.textAlign='left';
+  [[54,'54 °C'],[27,'27 °C'],[4,'4 °C']].forEach(([T,lab])=>{ if(T>=y0&&T<=y1){ const y=Y(T); g.beginPath(); g.moveTo(L,y); g.lineTo(L+pw,y); g.stroke(); g.fillText(lab,L+4,y-3);} });
+  // rapid cooling deadlines
+  const t54=res.summary.t54;
+  if(t54!==null){
+    g.setLineDash([6,4]); g.strokeStyle=cM; g.lineWidth=1.5; g.fillStyle=cM;
+    [[2,'2 h'],[7,'7 h']].forEach(([d,lab])=>{ const h=t54/60+d; if(h<=tMaxH){ g.beginPath(); g.moveTo(X(h),Tp); g.lineTo(X(h),Tp+ph); g.stroke(); g.textAlign='left'; g.fillText(lab+' limit',X(h)+4,Tp+12); } });
+  }
+  g.setLineDash([]); g.lineWidth=2.5; g.strokeStyle=cT; g.beginPath();
+  rows.forEach((r,i)=>{ const x=X(r.t/60), y=Y(r.T); i?g.lineTo(x,y):g.moveTo(x,y); }); g.stroke();
+}
+window.addEventListener('resize',()=>{ if(window._lastRes) drawChart(window._lastRes); });
+refreshForm();
+</script>
+</body>
+</html>
