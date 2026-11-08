@@ -4,6 +4,8 @@ Some calculations are informed by the United States Department of Agriculture In
 All calculations are prepared for students at Niagara College Canada, and are for study purposes. 
 These calculators are being validated for use in industry, however please perform your own validation against the regulations prior to use.
 
+This webpage has been prepared by Dr. Amy Proulx, Professor and Academic Program Coordinator of Food Innovation Programs at Niagara College Canada.
+
 
 ## Calculators
 
