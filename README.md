@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="NClogo.png" alt="Niagara College logo" width="150">
+</p>
+
 These are calculators for meat process controls in HACCP and Preventive Control Programs.
 Calculations are based off of the Canadian Food Inspection Agency Process Controls for Meat.
 Some calculations are informed by the United States Department of Agriculture Inspectors Calculation Handbook.
